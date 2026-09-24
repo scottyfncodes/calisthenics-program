@@ -4,23 +4,23 @@
       <stop offset="0" stop-color="#F6D860"/>
       <stop offset="1" stop-color="#FF8659"/>
     </linearGradient>
-    <clipPath id="sky"><rect width="512" height="384"/></clipPath>
+    <clipPath id="sky"><rect width="512" height="336"/></clipPath>
   </defs>
   <rect width="512" height="512" fill="#182420"/>
-  <circle cx="256" cy="384" r="150" fill="url(#sun)" clip-path="url(#sky)"/>
-  <rect x="64" y="380" width="384" height="8" rx="4" fill="#F1F3EC" opacity="0.28"/>
+  <circle cx="256" cy="336" r="184" fill="url(#sun)" clip-path="url(#sky)"/>
+  <!-- push-up, top position, facing right: feet, hips, shoulders, hands -->
   <g fill="none" stroke-linecap="round" stroke-linejoin="round">
-    <g stroke="#182420" stroke-width="38">
-      <path d="M205 150 L175 208 L230 222 M307 150 L337 208 L282 222"/>
-      <path d="M256 215 L256 300 L236 356 L272 396"/>
-      <circle cx="256" cy="140" r="30"/>
+    <g stroke="#182420" stroke-width="52">
+      <path d="M96 326 L220 292 L348 256"/>
+      <path d="M348 256 L356 326"/>
     </g>
-    <path d="M96 150 H416" stroke="#F1F3EC" stroke-width="18"/>
-    <g stroke="#F1F3EC" stroke-width="20">
-      <path d="M205 150 L175 208 L230 222 M307 150 L337 208 L282 222"/>
-      <path d="M256 215 L256 300 L236 356 L272 396"/>
+    <g stroke="#F1F3EC" stroke-width="28">
+      <path d="M96 326 L220 292 L348 256"/>
+      <path d="M348 256 L356 326"/>
     </g>
-    <path d="M230 222 Q256 205 282 222" stroke="#F1F3EC" stroke-width="20"/>
   </g>
-  <circle cx="256" cy="120" r="30" fill="#F1F3EC" stroke="#182420" stroke-width="10"/>
+  <circle cx="392" cy="232" r="32" fill="#F1F3EC" stroke="#182420" stroke-width="12"/>
+  <rect x="56" y="332" width="400" height="14" rx="7" fill="#F1F3EC"/>
+  <rect x="136" y="378" width="240" height="10" rx="5" fill="#F1F3EC" opacity="0.28"/>
+  <rect x="196" y="412" width="120" height="10" rx="5" fill="#F1F3EC" opacity="0.14"/>
 </svg>
