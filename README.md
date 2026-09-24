@@ -1,6 +1,8 @@
 # Morning Calisthenics
 
-A self-contained, single-file 12-week bodyweight calisthenics program. No build step, no runtime dependencies — open `index.html` in a browser or host it as a static site (e.g. GitHub Pages).
+**Live: https://scottyfncodes.github.io/calisthenics-program/** — open it on your phone and use *Add to Home Screen* to install it with its icon.
+
+A self-contained, single-file 12-week bodyweight calisthenics program. No build step, no runtime dependencies.
 
 ## Features
 
@@ -19,7 +21,7 @@ A self-contained, single-file 12-week bodyweight calisthenics program. No build 
 
 ## Running it
 
-Just open `index.html` directly, or serve the folder with any static file server:
+GitHub Pages serves `main` from the repo root, so every merge to `main` is deployed automatically. Locally, just open `index.html` directly, or serve the folder with any static file server:
 
 ```
 npx serve .
