@@ -14,6 +14,7 @@ A self-contained, single-file 12-week bodyweight calisthenics program. No build 
 - Completing every set (or tapping **Mark Done**) completes the day and points you to the next one
 - Undo for any logged set; audio cues, and the screen stays awake while a timer runs (where supported)
 - Respects `prefers-reduced-motion`: every state change stays visible, without the movement
+- Installable: app icon + web manifest (Add to Home Screen); PNGs are rendered from `icons/icon.svg` via `node scripts/render-icons.js`
 - Progress (current day, completed days, logged sets) saved locally in the browser via `localStorage`
 
 ## Running it
