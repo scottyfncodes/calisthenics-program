@@ -21,7 +21,7 @@ A self-contained, single-file 12-week bodyweight calisthenics program. No build 
 
 ## Running it
 
-GitHub Pages serves `main` from the repo root, so every merge to `main` is deployed automatically. Locally, just open `index.html` directly, or serve the folder with any static file server:
+Every merge to `main` is checked and deployed to GitHub Pages by `.github/workflows/pages.yml`. Locally, just open `index.html` directly, or serve the folder with any static file server:
 
 ```
 npx serve .
