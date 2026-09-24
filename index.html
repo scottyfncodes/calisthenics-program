@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#182420">
 <title>Morning Calisthenics — 12-Week Program</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Work+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
@@ -11,6 +12,7 @@
   --bg:#182420;
   --bg-panel:#1F2C27;
   --bg-panel-2:#26352F;
+  --bg-bar:#22312B;
   --line: rgba(241,243,236,0.14);
   --line-strong: rgba(241,243,236,0.28);
   --chalk:#F1F3EC;
@@ -22,6 +24,16 @@
   --full:#FF6B6B;
   --mob:#B79CF0;
   --rest:#D8D3C4;
+  --cat:var(--chalk);
+
+  /* motion: quick and intentional. --spring overshoots a touch for
+     "landed" moments (check, stamp); --out is the default settle. */
+  --out:cubic-bezier(.2,.8,.2,1);
+  --spring:cubic-bezier(.34,1.45,.64,1);
+  --t-fast:140ms;
+  --t:260ms;
+  --t-slow:420ms;
+  --bar-h:84px;
 }
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
 html,body{margin:0;padding:0;}
@@ -32,17 +44,24 @@ body{
   color:var(--chalk);
   font-family:'Work Sans', sans-serif;
   min-height:100vh;
-  padding-bottom:60px;
+  /* leave room for the fixed now-bar so the last card is never hidden */
+  padding-bottom:calc(var(--bar-h) + 40px + env(safe-area-inset-bottom));
 }
+button{font:inherit; color:inherit; touch-action:manipulation; -webkit-user-select:none; user-select:none;}
+button:focus-visible{outline:2px solid var(--chalk); outline-offset:2px;}
 .wrap{max-width:640px; margin:0 auto; padding:18px 16px 40px;}
 
+/* shared pressed state: primary controls physically give under the thumb */
+.press{transition:transform var(--t-fast) var(--out), background-color var(--t) ease, border-color var(--t) ease, color var(--t) ease, box-shadow var(--t) ease;}
+.press:active{transform:scale(0.95);}
+
 /* ---- Header ---- */
-.brand{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:14px;}
+.brand{display:flex; align-items:baseline; justify-content:space-between; gap:8px 12px; flex-wrap:wrap; margin-bottom:14px;}
 .brand h1{
   font-family:'Oswald', sans-serif; font-weight:700; letter-spacing:0.5px;
-  font-size:15px; text-transform:uppercase; color:var(--chalk-dim); margin:0;
+  font-size:14px; text-transform:uppercase; color:var(--chalk-dim); margin:0;
 }
-.brand .tag{font-family:'JetBrains Mono', monospace; font-size:11px; color:var(--chalk-dim); opacity:0.7;}
+.brand .tag{font-family:'JetBrains Mono', monospace; font-size:10.5px; color:var(--chalk-dim); opacity:0.7;}
 
 .dayhead{
   border:1px solid var(--line-strong);
@@ -52,6 +71,7 @@ body{
   position:relative;
   overflow:hidden;
   margin-bottom:14px;
+  transition:border-color var(--t-slow) ease, background-color var(--t-slow) ease;
 }
 .dayhead::before{
   content:"";
@@ -60,72 +80,208 @@ body{
     repeating-linear-gradient(0deg, transparent, transparent 27px, rgba(255,255,255,0.025) 28px);
   pointer-events:none;
 }
+.dayhead.is-done{
+  border-color:color-mix(in srgb, var(--cat) 60%, transparent);
+  background:linear-gradient(180deg, color-mix(in srgb, var(--cat) 10%, transparent), transparent 70%);
+}
 .phaseline{font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--chalk-dim); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;}
-.daynum{font-family:'Oswald',sans-serif; font-weight:700; font-size:44px; line-height:1; letter-spacing:0.5px; margin:0;}
-.daynum span{font-size:18px; color:var(--chalk-dim); font-weight:500; margin-left:8px;}
-.focusrow{display:flex; align-items:center; gap:10px; margin-top:10px;}
+.dayrow{display:flex; align-items:center; justify-content:space-between; gap:12px;}
+.daynum{font-family:'Oswald',sans-serif; font-weight:700; font-size:46px; line-height:1; letter-spacing:0.5px; margin:0; color:var(--chalk);}
+.daysub{display:block; font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--chalk-dim); font-weight:400; letter-spacing:0; margin-top:6px;}
+.focusrow{display:flex; align-items:center; flex-wrap:wrap; gap:8px 10px; margin-top:12px;}
 .badge{
-  font-family:'Oswald', sans-serif; font-weight:600; font-size:12px; text-transform:uppercase;
+  font-family:'Oswald', sans-serif; font-weight:600; font-size:12px; text-transform:uppercase; white-space:nowrap;
   letter-spacing:1px; padding:5px 12px; border-radius:100px; border:1.5px solid currentColor;
 }
-.meta{font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--chalk-dim);}
+.meta{font-family:'JetBrains Mono',monospace; font-size:11.5px; color:var(--chalk-dim);}
+
+/* completion stamp: sits beside the day number, lands when the day is done */
+.stamp{
+  flex:0 0 auto; width:54px; height:54px; border-radius:50%; position:relative;
+  display:flex; align-items:center; justify-content:center;
+  border:2px solid var(--cat); color:var(--cat);
+  opacity:0; transform:scale(0.6) rotate(-10deg);
+  transition:opacity var(--t) ease, transform var(--t) var(--out);
+}
+.stamp svg{width:28px; height:28px;}
+.stamp path{fill:none; stroke:currentColor; stroke-width:3.5; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:1; stroke-dashoffset:0;}
+.stamp::after{content:""; position:absolute; inset:-2px; border-radius:50%; border:2px solid var(--cat); opacity:0;}
+.dayhead.is-done .stamp{opacity:1; transform:scale(1) rotate(-6deg);}
+.dayhead.celebrate .stamp{animation:stampIn 560ms var(--spring) both;}
+.dayhead.celebrate .stamp path{animation:drawCheck 360ms var(--out) 260ms both;}
+.dayhead.celebrate .stamp::after{animation:shock 700ms var(--out) 220ms both;}
+@keyframes stampIn{
+  0%{opacity:0; transform:scale(1.7) rotate(-18deg);}
+  55%{opacity:1; transform:scale(0.92) rotate(-5deg);}
+  100%{opacity:1; transform:scale(1) rotate(-6deg);}
+}
+@keyframes drawCheck{from{stroke-dashoffset:1;} to{stroke-dashoffset:0;}}
+@keyframes shock{0%{opacity:0.7; transform:scale(1);} 100%{opacity:0; transform:scale(1.9);}}
+
+/* set track: one segment per set, grouped by section — reps stacking up */
+.track{display:flex; gap:8px; margin-top:16px; position:relative;}
+.tgroup{display:flex; gap:3px;}
+.seg{flex:1; height:7px; border-radius:2px; background:rgba(241,243,236,0.09); position:relative; overflow:hidden;}
+.seg::after{
+  content:""; position:absolute; inset:0; background:var(--cat);
+  transform:scaleX(0); transform-origin:left center;
+  transition:transform 320ms var(--out);
+}
+.tgroup.soft .seg::after{background:color-mix(in srgb, var(--cat) 55%, var(--chalk-dim));}
+.seg.on::after{transform:scaleX(1);}
+.seg.pop{animation:segPop 520ms var(--out);}
+@keyframes segPop{0%{transform:scaleY(1);} 35%{transform:scaleY(1.9);} 100%{transform:scaleY(1);}}
+.track::after{
+  content:""; position:absolute; top:-3px; bottom:-3px; left:0; width:40%; pointer-events:none;
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent);
+  opacity:0; transform:translateX(-120%);
+}
+.dayhead.celebrate .track::after{animation:sheen 900ms ease-out 120ms;}
+@keyframes sheen{0%{opacity:1; transform:translateX(-120%);} 100%{opacity:1; transform:translateX(260%);}}
+.trackmeta{display:flex; justify-content:space-between; gap:10px; margin-top:8px; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--chalk-dim);}
+.trackmeta b{color:var(--chalk); font-weight:600;}
+.tcount b{display:inline-block;}
+.tcount b.bump{animation:bump 360ms var(--spring);}
+@keyframes bump{0%{transform:translateY(0);} 40%{transform:translateY(-4px);} 100%{transform:translateY(0);}}
 
 /* nav row */
 .navrow{display:flex; gap:8px; margin-top:14px;}
 .navbtn{
   flex:1; background:var(--bg-panel-2); border:1px solid var(--line-strong); color:var(--chalk);
   font-family:'Oswald',sans-serif; text-transform:uppercase; letter-spacing:1px; font-size:12px; font-weight:600;
-  padding:10px 0; border-radius:9px; cursor:pointer;
+  min-height:44px; padding:10px 0; border-radius:9px; cursor:pointer;
 }
-.navbtn:active{transform:scale(0.97);}
-.navbtn.complete{border-color:var(--legs); color:var(--legs);}
+.navbtn.complete{border-color:var(--cat); color:var(--bg); background:var(--cat);}
 
 /* week strip */
-.weekstrip{display:flex; gap:6px; margin:14px 0 18px; overflow-x:auto; padding-bottom:2px;}
+.weekstrip{display:flex; gap:6px; margin:14px 0 18px; overflow-x:auto; padding:3px 1px 4px;}
 .chip{
-  flex:0 0 auto; width:38px; height:38px; border-radius:8px; display:flex; align-items:center; justify-content:center;
+  flex:1 0 38px; max-width:56px; height:42px; border-radius:8px; display:flex; align-items:center; justify-content:center;
   font-family:'JetBrains Mono',monospace; font-size:12px; border:1.5px solid var(--line-strong); color:var(--chalk-dim);
-  cursor:pointer; background:var(--bg-panel); position:relative;
+  cursor:pointer; background:var(--bg-panel); position:relative; padding:0;
 }
-.chip.active{border-color:var(--chalk); color:var(--chalk); background:var(--bg-panel-2);}
-.chip.done::after{content:""; position:absolute; bottom:3px; right:3px; width:5px; height:5px; border-radius:50%; background:var(--legs);}
+.chip.active{border-color:var(--chalk); color:var(--chalk); background:var(--bg-panel-2); transform:translateY(-2px); box-shadow:0 6px 14px -8px rgba(0,0,0,0.8);}
+.chip.active:active{transform:translateY(-2px) scale(0.95);}
+.chip .tick{
+  position:absolute; top:-5px; right:-5px; width:16px; height:16px; border-radius:50%;
+  background:var(--cat); color:var(--bg); display:flex; align-items:center; justify-content:center;
+  opacity:0; transform:scale(0.3); transition:opacity var(--t) ease, transform var(--t) var(--spring);
+}
+.chip .tick svg{width:10px; height:10px;}
+.chip .tick path{fill:none; stroke:currentColor; stroke-width:3.2; stroke-linecap:round; stroke-linejoin:round;}
+.chip.done{background:color-mix(in srgb, var(--cat) 14%, var(--bg-panel));}
+.chip.done .tick{opacity:1; transform:scale(1);}
+.chip.done.just-done .tick{animation:tickPop 520ms var(--spring) 380ms both;}
+@keyframes tickPop{0%{opacity:0; transform:scale(0.2);} 100%{opacity:1; transform:scale(1);}}
 
 /* ---- section ---- */
-.section{margin-bottom:16px;}
+.section{margin-bottom:18px;}
 .sectitle{
   font-family:'Oswald',sans-serif; text-transform:uppercase; font-weight:600; font-size:13px; letter-spacing:1.5px;
-  color:var(--chalk-dim); display:flex; align-items:center; gap:8px; margin:0 0 8px 4px;
+  color:var(--chalk-dim); display:flex; align-items:center; gap:8px; margin:0 0 6px 4px;
 }
-.sectitle .dot{width:7px; height:7px; border-radius:50%; background:currentColor;}
-.circuitinfo{font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--chalk-dim); margin-left:4px; margin-bottom:8px;}
+.sectitle .dot{width:7px; height:7px; border-radius:50%; background:currentColor; transition:transform var(--t) var(--spring);}
+.sectitle .secmeta{margin-left:auto; margin-right:4px; font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.5px; color:var(--chalk-dim); font-weight:400;}
+.section.sec-done .secmeta{color:var(--cat);}
+.circuitinfo{font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--chalk-dim); margin-left:4px; margin-bottom:9px;}
 
 .exlist{display:flex; flex-direction:column; gap:8px;}
 .exrow{
+  --accent:var(--cat);
   border:1px solid var(--line); border-radius:12px; background:var(--bg-panel);
-  overflow:hidden;
+  overflow:hidden; position:relative;
+  transition:border-color var(--t) ease, background-color var(--t) ease, box-shadow var(--t) ease, opacity var(--t) ease;
 }
-.exhead{
-  display:flex; align-items:center; justify-content:space-between; padding:12px 14px; cursor:pointer;
+/* accent rail on the left edge: grows in on the current move */
+.exrow::before{
+  content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--accent);
+  transform:scaleY(0); transform-origin:center; transition:transform var(--t-slow) var(--out); z-index:1;
 }
-.exname{font-family:'Work Sans',sans-serif; font-weight:600; font-size:14.5px;}
-.exsub{font-family:'JetBrains Mono',monospace; font-size:11.5px; color:var(--chalk-dim); margin-top:2px;}
-.exchev{color:var(--chalk-dim); font-size:12px; transition:transform 0.2s;}
+/* completion sweep: a band of color wipes across when a move is finished */
+.exrow::after{
+  content:""; position:absolute; inset:0; pointer-events:none;
+  background:linear-gradient(90deg, transparent, color-mix(in srgb, var(--accent) 22%, transparent) 60%, transparent);
+  transform:translateX(-100%); opacity:0;
+}
+.exrow.is-current{
+  border-color:color-mix(in srgb, var(--accent) 55%, transparent);
+  background:var(--bg-panel-2);
+  box-shadow:0 10px 24px -14px rgba(0,0,0,0.85), 0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+.exrow.is-current::before{transform:scaleY(1);}
+.exrow.became-current{animation:liftIn 420ms var(--out);}
+@keyframes liftIn{0%{transform:translateY(6px) scale(0.985);} 100%{transform:none;}}
+.exrow.is-done{background:color-mix(in srgb, var(--accent) 7%, var(--bg-panel)); border-color:color-mix(in srgb, var(--accent) 22%, transparent);}
+.exrow.is-done .exname{opacity:0.62;}
+.exrow.just-done::after{animation:sweep 620ms var(--out);}
+@keyframes sweep{0%{opacity:1; transform:translateX(-100%);} 100%{opacity:1; transform:translateX(100%);}}
+
+.exhead{display:flex; align-items:stretch;}
+.extoggle{
+  flex:1; min-width:0; display:flex; align-items:center; justify-content:space-between; gap:10px;
+  padding:12px 6px 12px 14px; background:none; border:0; text-align:left; cursor:pointer;
+}
+.exmain{display:flex; flex-direction:column; min-width:0;}
+.exname{font-family:'Work Sans',sans-serif; font-weight:600; font-size:15px; transition:opacity var(--t) ease;}
+.exsub{font-family:'JetBrains Mono',monospace; font-size:11.5px; color:var(--chalk-dim); margin-top:3px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+.nowtag{
+  font-family:'Oswald',sans-serif; font-size:10.5px; letter-spacing:1.2px; text-transform:uppercase; font-weight:600;
+  color:var(--bg); background:var(--accent); padding:1px 7px; border-radius:4px; display:none;
+}
+.exrow.is-current .nowtag{display:inline-block; animation:fadeUp 300ms var(--out) both;}
+@keyframes fadeUp{from{opacity:0; transform:translateY(3px);} to{opacity:1; transform:none;}}
+.pips{display:inline-flex; gap:3px; vertical-align:middle;}
+.pips i{width:12px; height:4px; border-radius:2px; background:rgba(241,243,236,0.16); position:relative; overflow:hidden;}
+.pips i::after{content:""; position:absolute; inset:0; background:var(--accent); transform:scaleX(0); transform-origin:left; transition:transform 300ms var(--out);}
+.pips i.on::after{transform:scaleX(1);}
+.exchev{color:var(--chalk-dim); font-size:12px; transition:transform var(--t) var(--out); flex:0 0 auto;}
 .exrow.open .exchev{transform:rotate(180deg);}
-.exbody{max-height:0; overflow:hidden; transition:max-height 0.25s ease;}
-.exrow.open .exbody{max-height:340px;}
-.exinner{padding:0 14px 16px; display:flex; gap:14px; align-items:center; border-top:1px solid var(--line);}
+
+/* check button: ring fills per logged round, check draws in on completion */
+.check{
+  flex:0 0 auto; width:60px; min-height:56px; background:none; border:0; border-left:1px solid var(--line);
+  display:flex; align-items:center; justify-content:center; cursor:pointer; position:relative; padding:0;
+}
+.ck{width:34px; height:34px; position:relative; display:block; transition:transform var(--t-fast) var(--out);}
+.check:active .ck{transform:scale(0.86);}
+.ck svg{width:34px; height:34px; display:block; transform:rotate(-90deg);}
+.ck .ck-bg{fill:transparent; transition:fill var(--t) ease;}
+.ck .ck-track{fill:none; stroke:var(--line-strong); stroke-width:2;}
+.ck .ck-ring{fill:none; stroke:var(--accent); stroke-width:2.5; stroke-linecap:round; stroke-dasharray:1 1; stroke-dashoffset:1; transition:stroke-dashoffset 380ms var(--out), opacity var(--t-fast) ease;}
+.ck .ck-mark{position:absolute; inset:0; width:34px; height:34px; transform:none;}
+.ck .ck-mark path{fill:none; stroke:var(--bg); stroke-width:3; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:1 1; stroke-dashoffset:1; transition:stroke-dashoffset 260ms var(--out);}
+.ck .ck-count{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--chalk-dim); transition:opacity var(--t-fast) ease;}
+.exrow.is-current .ck .ck-count{color:var(--chalk);}
+.exrow.is-done .ck .ck-bg{fill:var(--accent);}
+.exrow.is-done .ck .ck-mark path{stroke-dashoffset:0; transition-delay:120ms;}
+.exrow.is-done .ck .ck-count{opacity:0;}
+.exrow.just-logged .ck{animation:ckPop 460ms var(--spring);}
+@keyframes ckPop{0%{transform:scale(0.8);} 60%{transform:scale(1.12);} 100%{transform:scale(1);}}
+
+/* expand / collapse: grid 0fr→1fr animates to the content's real height */
+.exbody{display:grid; grid-template-rows:0fr; transition:grid-template-rows 300ms var(--out);}
+.exclip{overflow:hidden; min-height:0;}
+.exrow.open .exbody{grid-template-rows:1fr;}
+.exinner{
+  padding:0 14px 16px; display:flex; gap:14px; align-items:center; border-top:1px solid var(--line);
+  opacity:0; transform:translateY(-6px); transition:opacity 200ms ease, transform 300ms var(--out);
+}
+.exrow.open .exinner{opacity:1; transform:none;}
 .stagebox{
-  width:110px; height:110px; flex:0 0 auto; border-radius:10px; background:var(--bg-panel-2);
+  width:110px; height:110px; flex:0 0 auto; border-radius:10px; background:var(--bg);
   display:flex; align-items:center; justify-content:center; margin-top:12px;
 }
 .stagebox svg{width:88px; height:88px; overflow:visible;}
 .cuecol{padding-top:12px;}
-.cue{font-size:13px; line-height:1.45; color:var(--chalk); opacity:0.92;}
+.cue{font-size:13.5px; line-height:1.45; color:var(--chalk); opacity:0.92;}
 .timerbtn{
   margin-top:10px; font-family:'JetBrains Mono',monospace; font-size:12px; background:transparent;
-  border:1.5px solid var(--line-strong); color:var(--chalk); padding:6px 12px; border-radius:100px; cursor:pointer;
+  border:1.5px solid var(--line-strong); color:var(--chalk); min-height:36px; padding:6px 14px; border-radius:100px; cursor:pointer;
 }
-.timerbtn.running{border-color:var(--push); color:var(--push);}
+.timerbtn.running{border-color:var(--accent); color:var(--accent);}
+
+/* collapsed demos don't need to keep animating off-screen */
+.exrow:not(.open) .fig *{animation-play-state:paused;}
 
 /* figure */
 .fig line, .fig circle{fill:none; stroke:var(--chalk); stroke-width:6; stroke-linecap:round;}
@@ -138,11 +294,100 @@ body{
 .fig .i-leg{stroke:var(--chalk); stroke-width:4; stroke-linecap:round;}
 .fig .sp-leg{stroke:var(--chalk); stroke-width:4; stroke-linecap:round;}
 
+/* page entrance when the day changes: content slides in from the
+   direction you navigated, rows settle in a quick stagger */
+.wrap.enter .dayhead, .wrap.enter .weekstrip{animation:slideIn 380ms var(--out) backwards;}
+.wrap.enter .sectitle, .wrap.enter .circuitinfo, .wrap.enter .exrow, .wrap.enter .footnote{animation:rowIn 400ms var(--out) backwards; animation-delay:calc(var(--i, 0) * 30ms + 60ms);}
+.wrap[data-dir="next"]{--from:14px;}
+.wrap[data-dir="prev"]{--from:-14px;}
+@keyframes slideIn{from{opacity:0; transform:translateX(var(--from, 0)) translateY(var(--rise, 0));}}
+@keyframes rowIn{from{opacity:0; transform:translateY(10px);}}
+
+/* ---- now bar: what am I doing, how long, what's next ---- */
+.nowbar{
+  position:fixed; left:0; right:0; bottom:0; z-index:20; pointer-events:none;
+  padding:0 10px calc(10px + env(safe-area-inset-bottom));
+}
+.nb{
+  pointer-events:auto; max-width:620px; margin:0 auto; min-height:var(--bar-h);
+  display:flex; align-items:center; gap:12px; padding:10px 10px 10px 12px;
+  background:var(--bg-bar); border:1px solid var(--line-strong); border-radius:16px;
+  box-shadow:0 14px 34px -12px rgba(0,0,0,0.9), 0 -1px 0 rgba(255,255,255,0.04) inset;
+  transform:translateY(calc(100% + 24px)); transition:transform var(--t-slow) var(--out), border-color var(--t) ease;
+}
+.nowbar.show .nb{transform:none;}
+.nowbar[data-phase="work"] .nb{border-color:color-mix(in srgb, var(--cat) 70%, transparent);}
+.nowbar[data-phase="done"] .nb{border-color:color-mix(in srgb, var(--cat) 55%, transparent);}
+.nb-ring{
+  flex:0 0 auto; width:58px; height:58px; position:relative; background:none; border:0; padding:0; cursor:pointer;
+  border-radius:50%;
+}
+.nb-ring svg{width:58px; height:58px; display:block; transform:rotate(-90deg);}
+.nb-ring .rg-track{fill:none; stroke:rgba(241,243,236,0.12); stroke-width:4;}
+.nb-ring .rg-arc{fill:none; stroke:var(--cat); stroke-width:4; stroke-linecap:round; stroke-dasharray:1 1; stroke-dashoffset:0; transition:stroke-dashoffset 250ms linear, stroke var(--t) ease;}
+.nb-ring .rg-fill{fill:transparent; transition:fill var(--t) ease;}
+.nowbar[data-phase="rest"] .rg-arc{stroke:var(--chalk-dim);}
+.nowbar[data-phase="done"] .rg-fill{fill:var(--cat);}
+.nb-num{
+  position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-weight:600; font-size:18px; color:var(--chalk); font-variant-numeric:tabular-nums;
+}
+.nb-num svg{width:22px; height:22px; transform:none;}
+.nb-num path{fill:none; stroke:currentColor; stroke-width:2.6; stroke-linecap:round; stroke-linejoin:round;}
+.nb-num .play{fill:currentColor; stroke:none;}
+.nowbar[data-phase="done"] .nb-num{color:var(--bg);}
+.nowbar[data-phase="ready"] .nb-num, .nowbar[data-phase="rest"] .nb-num{color:var(--chalk);}
+.nb-ring.tick{animation:ringTick 420ms var(--out);}
+@keyframes ringTick{0%{transform:scale(1);} 30%{transform:scale(1.08);} 100%{transform:scale(1);}}
+.nb-text{flex:1; min-width:0;}
+.nb-text.swap{animation:fadeUp 320ms var(--out);}
+.nb-label{font-family:'JetBrains Mono',monospace; font-size:10.5px; letter-spacing:1px; text-transform:uppercase; color:var(--chalk-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.nowbar[data-phase="work"] .nb-label, .nowbar[data-phase="done"] .nb-label{color:var(--cat);}
+.nb-name{font-family:'Oswald',sans-serif; font-weight:600; font-size:19px; line-height:1.15; margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer;}
+.nb-action{
+  flex:0 0 auto; min-width:92px; min-height:52px; padding:0 16px; border-radius:12px; cursor:pointer;
+  font-family:'Oswald',sans-serif; font-weight:600; font-size:14px; letter-spacing:1px; text-transform:uppercase;
+  background:var(--cat); color:var(--bg); border:1.5px solid var(--cat);
+}
+.nb-action.ghost{background:transparent; color:var(--chalk); border-color:var(--line-strong);}
+.nb-action[hidden]{display:none;}
+/* rest just ended: nudge the user to go */
+.nowbar.go .nb-action{animation:goPulse 1.2s var(--out) 2;}
+@keyframes goPulse{0%{box-shadow:0 0 0 0 color-mix(in srgb, var(--cat) 70%, transparent);} 100%{box-shadow:0 0 0 14px transparent;}}
+
+/* toast: confirms a logged set and offers undo for stray taps */
+.toast{
+  position:fixed; left:50%; z-index:30; bottom:calc(var(--bar-h) + 22px + env(safe-area-inset-bottom));
+  display:flex; align-items:center; gap:12px; max-width:calc(100% - 32px);
+  padding:8px 8px 8px 14px; border-radius:10px; background:var(--chalk); color:var(--bg);
+  font-size:13px; font-weight:500; box-shadow:0 10px 24px -10px rgba(0,0,0,0.8);
+  transform:translate(-50%, 12px); opacity:0; pointer-events:none;
+  transition:opacity 200ms ease, transform 300ms var(--out);
+}
+.toast.show{opacity:1; transform:translate(-50%, 0); pointer-events:auto;}
+.toast span{white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.toast button{
+  flex:0 0 auto; background:transparent; border:1.5px solid rgba(24,36,32,0.35); border-radius:7px; min-height:34px; padding:0 12px;
+  font-family:'Oswald',sans-serif; font-weight:600; font-size:12px; letter-spacing:1px; text-transform:uppercase; cursor:pointer;
+}
+
+@media (hover:hover){
+  .navbtn:hover, .chip:hover{border-color:var(--chalk-dim);}
+  .extoggle:hover .exname{text-decoration:underline; text-decoration-color:var(--line-strong); text-underline-offset:3px;}
+  .check:hover .ck-track{stroke:var(--chalk-dim);}
+}
+
 /* Respect the OS "reduce motion" setting: freeze the demo at a readable
-   mid-rep pose instead of looping. */
+   mid-rep pose instead of looping, and drop movement from state changes.
+   Every state is still conveyed by color, fill and text. */
 @media (prefers-reduced-motion: reduce){
   .fig *{animation:none !important;}
-  .exbody, .exchev{transition:none !important;}
+  *, *::before, *::after{
+    animation-duration:1ms !important; animation-iteration-count:1 !important; animation-delay:0ms !important;
+    transition-duration:1ms !important; transition-delay:0ms !important;
+  }
+  .exrow::after, .track::after{display:none;}
+  .chip.active{transform:none;}
 }
 
 /* footer note */
@@ -158,10 +403,37 @@ body{
 /* category color utility classes set via inline style using CSS var --cat */
 .badge, .sectitle, .chip.cat{color:var(--cat);}
 .chip.cat.active{background:color-mix(in srgb, var(--cat) 20%, var(--bg-panel));}
+.chip.cat.done{color:var(--cat);}
+
+@media (max-width:360px){
+  .daynum{font-size:40px;}
+  .dayhead{padding:16px 14px 14px;}
+  .navbtn{font-size:11px; letter-spacing:0.5px; white-space:nowrap;}
+  .chip{flex-basis:32px;}
+  .weekstrip{gap:5px;}
+  .nb{gap:10px;}
+  .nb-action{min-width:80px; padding:0 12px;}
+  .nb-name{font-size:17px;}
+  .nb-label{letter-spacing:0.3px;}
+}
 </style>
 </head>
 <body>
 <div class="wrap" id="app"></div>
+<div class="nowbar" id="nowbar" data-phase="ready">
+  <div class="nb">
+    <button class="nb-ring" onclick="nowbarAction()" aria-label="Primary workout action">
+      <svg viewBox="0 0 58 58"><circle class="rg-fill" cx="29" cy="29" r="25"/><circle class="rg-track" cx="29" cy="29" r="25"/><circle class="rg-arc" cx="29" cy="29" r="25" pathLength="1"/></svg>
+      <span class="nb-num"></span>
+    </button>
+    <div class="nb-text" onclick="nowbarReveal()">
+      <div class="nb-label" aria-live="polite"></div>
+      <div class="nb-name"></div>
+    </div>
+    <button class="nb-action press" onclick="nowbarAction()"></button>
+  </div>
+</div>
+<div class="toast" id="toast" role="status"><span></span><button onclick="undoToast()">Undo</button></div>
 
 <script>
 /* =========================================================
@@ -352,13 +624,19 @@ function getWorkout(day){
 /* =========================================================
    STORAGE (persist current day + completed days)
    ========================================================= */
-let state = {day:1, completed:{}};
+let state = {day:1, completed:{}, sets:{}};
 const STORAGE_KEY = 'cal-program-state';
 function loadState(){
   try{
     const raw = localStorage.getItem(STORAGE_KEY);
     if(raw){ state = JSON.parse(raw); }
   }catch(e){ /* no saved state yet */ }
+  // older saves only had {day, completed}; sets (per-move logging) is new
+  if(!state || typeof state!=='object') state = {};
+  const day = parseInt(state.day, 10);
+  state.day = day>=1 && day<=84 ? day : 1;
+  if(!state.completed || typeof state.completed!=='object') state.completed = {};
+  if(!state.sets || typeof state.sets!=='object') state.sets = {};
   render();
 }
 function saveState(){
@@ -860,27 +1138,97 @@ function standFigureSVG(type){
 }
 
 /* =========================================================
-   RENDER
+   WORKOUT PLAN + SET LOGGING
+   Each move on a day gets a stable key (section letter + index).
+   Circuit moves need one logged set per round; warm-up, cool-down
+   and flow moves need one. Counts live in state.sets[day][key].
    ========================================================= */
+const SECTION_LABEL = {w:"Warm-up", c:"Circuit", d:"Cool-down", f:"Flow"};
+function dayPlan(w){
+  const groups = [];
+  const add = (sec, ids, target, workSec) =>
+    groups.push({sec, items: ids.map((id,i)=>({key:sec+i, id, sec, target, workSec}))});
+  if(w.flow){ add('f', w.flow, 1, 0); }
+  else { add('w', w.warmup, 1, 0); add('c', w.circuit, w.rounds, w.workSec); add('d', w.cooldown, 1, 0); }
+  return groups;
+}
+function planItems(plan){ return plan.flatMap(g=>g.items); }
+function setCount(d, key){ return (state.sets[d] && state.sets[d][key]) || 0; }
+function setCountTo(d, key, n){
+  const s = state.sets[d] || (state.sets[d] = {});
+  if(n>0) s[key] = n; else delete s[key];
+  if(!Object.keys(s).length) delete state.sets[d];
+}
+function planTotals(plan, d){
+  let done = 0, total = 0;
+  planItems(plan).forEach(it=>{ total += it.target; done += Math.min(it.target, setCount(d, it.key)); });
+  return {done, total};
+}
+/* What should the user do next? Warm-up in order, then the circuit
+   round-robin (every move once per round), then cool-down. */
+function nextUp(plan, d){
+  for(const g of plan){
+    if(g.sec==='c'){
+      const counts = g.items.map(it=>setCount(d, it.key));
+      const r = Math.min(...counts);
+      if(r < g.items[0].target){ const i = counts.indexOf(r); return {item:g.items[i], round:r+1}; }
+    } else {
+      const it = g.items.find(it=>setCount(d, it.key) < it.target);
+      if(it) return {item:it, round:1};
+    }
+  }
+  return null;
+}
+
+/* =========================================================
+   RENDER — full rebuild only when the day changes. Logging a
+   set, timers and completion update the existing DOM in place
+   (refresh) so every state change can transition, not snap.
+   ========================================================= */
+const reduceMotion = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : {matches:false};
+let view = null;          // {w, plan} for the day on screen
+let navDir = 0;
+let lastCurrentKey = null;
+const openRows = new Set();
+
+const CHECK_PATH = `<path d="M6 12.5l4 4L18 8" pathLength="1"/>`;
+
 function render(){
   stopTimer();
   const w = getWorkout(state.day);
+  const plan = dayPlan(w);
+  view = {w, plan};
+  openRows.clear();
+  lastCurrentKey = null;
   const app = document.getElementById('app');
   const catColor = `var(${CAT[w.cat].css})`;
+  app.style.setProperty('--cat', catColor);
+  document.getElementById('nowbar').style.setProperty('--cat', catColor);
+  document.getElementById('toast').classList.remove('show');
 
   let html = `
     <div class="brand"><h1>Morning Calisthenics</h1><div class="tag">MEN'S PROGRAM · 12 WEEKS</div></div>
     <div class="dayhead" style="color:${catColor}">
       <div class="phaseline" style="color:var(--chalk-dim)">${w.phase.name.toUpperCase()} · ${w.phase.weeks}</div>
-      <p class="daynum" style="color:var(--chalk)">DAY ${state.day}<span>of 84 · Week ${w.week}, Day ${w.dow}</span></p>
+      <div class="dayrow">
+        <p class="daynum">DAY ${state.day}<span class="daysub">of 84 · Week ${w.week}, Day ${w.dow}</span></p>
+        <div class="stamp" aria-hidden="true"><svg viewBox="0 0 24 24">${CHECK_PATH}</svg></div>
+      </div>
       <div class="focusrow">
         <div class="badge" style="color:${catColor}">${w.title || CAT[w.cat].label}</div>
         <div class="meta">${w.circuit ? `~15 min · ${w.rounds} rounds · ${w.workSec}s work / ${w.restSec}s rest` : "~15 min flow"}</div>
       </div>
+      <div class="track" role="progressbar" aria-label="Sets logged today" aria-valuemin="0">
+        ${plan.map(g=>{
+          const n = g.items.reduce((a,it)=>a+it.target,0);
+          return `<div class="tgroup ${g.sec==='c'||g.sec==='f'?'':'soft'}" data-sec="${g.sec}" style="flex:${n}">${'<i class="seg"></i>'.repeat(n)}</div>`;
+        }).join('')}
+      </div>
+      <div class="trackmeta"><span class="tcount"></span><span class="tnext"></span></div>
       <div class="navrow">
-        <button class="navbtn" onclick="changeDay(-1)">◀ Prev</button>
-        <button class="navbtn ${state.completed[state.day]?'complete':''}" onclick="toggleComplete()">${state.completed[state.day] ? '✓ Done' : 'Mark Done'}</button>
-        <button class="navbtn" onclick="changeDay(1)">Next ▶</button>
+        <button class="navbtn press" onclick="changeDay(-1)">◀ Prev</button>
+        <button class="navbtn press" id="donebtn" onclick="toggleComplete()"></button>
+        <button class="navbtn press" onclick="changeDay(1)">Next ▶</button>
       </div>
     </div>
 
@@ -890,115 +1238,494 @@ function render(){
     const dnum = weekStart+i;
     const dw = getWorkout(dnum);
     const active = dnum===state.day ? 'active' : '';
-    const done = state.completed[dnum] ? 'done' : '';
-    html += `<div class="chip cat ${active} ${done}" style="--cat:${`var(${CAT[dw.cat].css})`}" onclick="jumpTo(${dnum})">${dnum}</div>`;
+    html += `<button class="chip cat press ${active}" data-day="${dnum}" style="--cat:var(${CAT[dw.cat].css})" onclick="jumpTo(${dnum})" aria-label="Day ${dnum}, ${dw.title}">${dnum}<span class="tick"><svg viewBox="0 0 24 24">${CHECK_PATH}</svg></span></button>`;
   }
   html += `</div>`;
 
+  let i = 0; // stagger index for the entrance animation
+  const section = (g, title, info, color, workSec) => {
+    const s = `<div class="section" data-sec="${g.sec}">
+      <div class="sectitle" style="color:${color}; --i:${i++}"><span class="dot"></span>${title}<span class="secmeta"></span></div>
+      <div class="circuitinfo" style="--i:${i++}">${info}</div>
+      ${exList(g.items, workSec, ()=>i++)}</div>`;
+    return s;
+  };
   if(w.flow){
-    html += `<div class="section"><div class="sectitle" style="color:${catColor}"><span class="dot"></span>${w.title}</div>
-      <div class="circuitinfo">${w.note} · ~${Math.round(w.flow.length*w.flowSec/60)} min total</div>
-      ${exList(w.flow, catColor)}</div>`;
+    html += section(plan[0], w.title, `${w.note} · ~${Math.round(w.flow.length*w.flowSec/60)} min total`, catColor);
   } else {
-    html += `<div class="section"><div class="sectitle"><span class="dot"></span>Warm-up</div>
-      <div class="circuitinfo">2 rounds · 30–40s each, easy pace</div>
-      ${exList(w.warmup, 'var(--chalk-dim)')}</div>`;
-
-    html += `<div class="section"><div class="sectitle" style="color:${catColor}"><span class="dot"></span>${w.title} — Circuit</div>
-      <div class="circuitinfo">${w.rounds} rounds through all 3 · ${w.workSec}s work / ${w.restSec}s rest</div>
-      ${exList(w.circuit, catColor, w.workSec)}</div>`;
-
-    html += `<div class="section"><div class="sectitle"><span class="dot"></span>Cool-down</div>
-      <div class="circuitinfo">Hold each stretch 40–45s per side</div>
-      ${exList(w.cooldown, 'var(--chalk-dim)')}</div>`;
+    html += section(plan[0], 'Warm-up', '2 rounds · 30–40s each, easy pace', 'var(--chalk)');
+    html += section(plan[1], `${w.title} — Circuit`, `${w.rounds} rounds through all 3 · ${w.workSec}s work / ${w.restSec}s rest`, catColor, w.workSec);
+    html += section(plan[2], 'Cool-down', 'Hold each stretch 40–45s per side', 'var(--chalk)');
   }
 
-  html += `<div class="footnote"><b>${w.phase.name} phase</b> (${w.phase.weeks}): ${w.phase.blurb} Tap any move for a quick animated demo and form cue.</div>`;
+  html += `<div class="footnote" style="--i:${i}"><b>${w.phase.name} phase</b> (${w.phase.weeks}): ${w.phase.blurb} Tap any move for a quick animated demo and form cue; tap the circle to log it.</div>`;
 
   app.innerHTML = html;
+
+  // entrance: slide from the direction you navigated
+  app.dataset.dir = navDir>0 ? 'next' : navDir<0 ? 'prev' : 'load';
+  navDir = 0;
+  app.classList.remove('enter'); void app.offsetWidth; app.classList.add('enter');
+  clearTimeout(render.enterT);
+  // drop the class once finished so later state animations never replay it
+  render.enterT = setTimeout(()=>app.classList.remove('enter'), 900);
+
+  refresh({initial:true});
 }
 
-function exList(ids, color, workSec){
-  return `<div class="exlist">` + ids.map((id,idx)=>{
-    const ex = EX[id];
-    const uid = `ex_${id}_${idx}_${Math.random().toString(36).slice(2,6)}`;
+function exList(items, workSec, nextI){
+  return `<div class="exlist">` + items.map(it=>{
+    const ex = EX[it.id];
+    const pips = it.target>1 ? `<span class="pips" aria-hidden="true">${'<i></i>'.repeat(it.target)}</span>` : '';
     return `
-    <div class="exrow" id="${uid}">
-      <div class="exhead" onclick="toggleEx('${uid}')">
-        <div>
-          <div class="exname">${ex.name}</div>
-          <div class="exsub">${workSec? workSec+'s work' : 'Hold / flow pace'}</div>
-        </div>
-        <div class="exchev" style="color:${color}">▾</div>
+    <div class="exrow" id="row-${it.key}" data-key="${it.key}" style="--i:${nextI()}">
+      <div class="exhead">
+        <button class="extoggle" aria-expanded="false" aria-controls="body-${it.key}" onclick="toggleEx('${it.key}')">
+          <span class="exmain">
+            <span class="exname">${ex.name}</span>
+            <span class="exsub"><span class="nowtag">Now</span><span>${workSec ? workSec+'s work' : 'Hold / flow pace'}</span>${pips}</span>
+          </span>
+          <span class="exchev">▾</span>
+        </button>
+        <button class="check" onclick="tapCheck('${it.key}')">
+          <span class="ck">
+            <svg viewBox="0 0 34 34"><circle class="ck-bg" cx="17" cy="17" r="15"/><circle class="ck-track" cx="17" cy="17" r="15"/><circle class="ck-ring" cx="17" cy="17" r="15" pathLength="1"/></svg>
+            <svg class="ck-mark" viewBox="0 0 34 34"><path d="M11 17.5l4 4 8-8.5" pathLength="1"/></svg>
+            <span class="ck-count"></span>
+          </span>
+        </button>
       </div>
-      <div class="exbody">
-        <div class="exinner">
+      <div class="exbody" id="body-${it.key}">
+        <div class="exclip"><div class="exinner">
           <div class="stagebox">${figureSVG(ex.type)}</div>
           <div class="cuecol">
             <div class="cue">${ex.cue}</div>
-            ${workSec ? `<button class="timerbtn" onclick="event.stopPropagation(); runTimer(this, ${workSec})">Start ${workSec}s</button>` : ``}
+            ${workSec ? `<button class="timerbtn press" onclick="runTimer('${it.key}')">Start ${workSec}s</button>` : ``}
           </div>
-        </div>
+        </div></div>
       </div>
     </div>`;
   }).join('') + `</div>`;
 }
 
-function toggleEx(uid){
-  document.getElementById(uid).classList.toggle('open');
+function setOpen(key, open){
+  const row = document.getElementById('row-'+key);
+  if(!row) return;
+  row.classList.toggle('open', open);
+  row.querySelector('.extoggle').setAttribute('aria-expanded', open);
+  if(open) openRows.add(key); else openRows.delete(key);
+}
+function toggleEx(key){ setOpen(key, !openRows.has(key)); }
+
+/* Sync every piece of day UI to state. opts.logged = key just logged,
+   opts.celebrate = the day just became complete. */
+function refresh(opts={}){
+  if(!view) return;
+  const d = state.day, {plan} = view;
+  const next = nextUp(plan, d);
+  const curKey = next && !state.completed[d] ? next.item.key : null;
+  const cur = next ? next.item : null;
+
+  planItems(plan).forEach(it=>{
+    const row = document.getElementById('row-'+it.key);
+    const c = Math.min(it.target, setCount(d, it.key));
+    const done = c >= it.target;
+    const wasDone = row.classList.contains('is-done');
+    row.classList.toggle('is-done', done);
+    row.classList.toggle('is-current', it.key===curKey);
+    row.querySelector('.ck-ring').style.strokeDashoffset = 1 - c/it.target; row.querySelector('.ck-ring').style.opacity = c>0 ? 1 : 0;
+    row.querySelector('.ck-count').textContent = it.target>1 && c>0 && !done ? c : '';
+    row.querySelectorAll('.pips i').forEach((p,i)=>p.classList.toggle('on', i<c));
+    const name = EX[it.id].name;
+    row.querySelector('.check').setAttribute('aria-label', done
+      ? `${name} done. Tap to reset`
+      : it.target>1 ? `Log round ${c+1} of ${it.target} for ${name}` : `Mark ${name} done`);
+    row.querySelector('.check').setAttribute('aria-pressed', done);
+    if(opts.logged===it.key){
+      flash(row, 'just-logged', 500);
+      if(done && !wasDone){ flash(row, 'just-done', 700); if(openRows.has(it.key)) setOpen(it.key, false); }
+    }
+  });
+
+  // current move: expand it, lift it in, and bring it into view
+  if(curKey && curKey!==lastCurrentKey){
+    if(lastCurrentKey && !opts.initial) setOpen(lastCurrentKey, false);
+    const row = document.getElementById('row-'+curKey);
+    if(!opts.initial) flash(row, 'became-current', 450);
+    setOpen(curKey, true);
+    if(!opts.initial && !opts.celebrate) revealRow(row);
+  }
+  lastCurrentKey = curKey;
+
+  // sections
+  plan.forEach(g=>{
+    const sec = document.querySelector(`.section[data-sec="${g.sec}"]`);
+    const meta = sec.querySelector('.secmeta');
+    if(g.sec==='c'){
+      const r = Math.min(...g.items.map(it=>setCount(d,it.key)));
+      const target = g.items[0].target;
+      meta.textContent = r>=target ? `✓ ${target}/${target} rounds` : `Round ${r+1}/${target}`;
+      sec.classList.toggle('sec-done', r>=target);
+    } else {
+      const n = g.items.filter(it=>setCount(d,it.key)>=it.target).length;
+      meta.textContent = n===g.items.length ? `✓ ${n}/${n}` : `${n}/${g.items.length}`;
+      sec.classList.toggle('sec-done', n===g.items.length);
+    }
+  });
+
+  // set track
+  const {done, total} = planTotals(plan, d);
+  plan.forEach(g=>{
+    const segs = document.querySelectorAll(`.tgroup[data-sec="${g.sec}"] .seg`);
+    const filled = g.items.reduce((a,it)=>a+Math.min(it.target, setCount(d,it.key)),0);
+    segs.forEach((s,i)=>{
+      const on = i<filled;
+      if(on && !s.classList.contains('on') && !opts.initial) flash(s, 'pop', 550);
+      s.classList.toggle('on', on);
+    });
+  });
+  const track = document.querySelector('.track');
+  track.setAttribute('aria-valuemax', total);
+  track.setAttribute('aria-valuenow', done);
+  const tcount = document.querySelector('.tcount');
+  tcount.innerHTML = `<b>${done}</b> / ${total} sets`;
+  if(opts.logged) flash(tcount.querySelector('b'), 'bump', 400);
+  document.querySelector('.tnext').textContent = state.completed[d] ? 'Day complete' : done===0 ? "Let's go" : `${total-done} to go`;
+
+  // day header + done button + week chip
+  const dayDone = !!state.completed[d];
+  const head = document.querySelector('.dayhead');
+  head.classList.toggle('is-done', dayDone);
+  const btn = document.getElementById('donebtn');
+  btn.textContent = dayDone ? '✓ Done' : 'Mark Done';
+  btn.classList.toggle('complete', dayDone);
+  btn.setAttribute('aria-pressed', dayDone);
+  document.querySelectorAll('.chip').forEach(ch=>ch.classList.toggle('done', !!state.completed[+ch.dataset.day]));
+  if(opts.celebrate){
+    flash(head, 'celebrate', 1400);
+    const chip = document.querySelector(`.chip[data-day="${d}"]`);
+    if(chip) flash(chip, 'just-done', 1000);
+  }
+
+  updateNowbar(opts);
 }
 
-function changeDay(delta){
-  state.day = Math.min(84, Math.max(1, state.day+delta));
-  saveState(); render();
-  window.scrollTo({top:0, behavior:'smooth'});
+/* restart a one-shot CSS animation class */
+function flash(el, cls, ms){
+  if(!el) return;
+  el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls);
+  clearTimeout(el['_t'+cls]);
+  el['_t'+cls] = setTimeout(()=>el.classList.remove(cls), ms);
 }
-function jumpTo(d){ state.day = d; saveState(); render(); }
-function toggleComplete(){
-  if(state.completed[state.day]) delete state.completed[state.day];
-  else state.completed[state.day] = true;
-  saveState(); render();
+function scrollBehavior(){ return reduceMotion.matches ? 'auto' : 'smooth'; }
+function revealRow(row){
+  // wait for the previous row's collapse to settle before measuring
+  setTimeout(()=>{
+    const r = row.getBoundingClientRect();
+    const barTop = document.querySelector('.nb').getBoundingClientRect().top;
+    if(r.top < 12 || r.top + Math.min(r.height, 200) > barTop - 8){
+      window.scrollTo({top: window.scrollY + r.top - 90, behavior: scrollBehavior()});
+    }
+  }, 320);
 }
 
-let timerHandle = null;
-let timerBtn = null;
-function stopTimer(){
-  if(timerHandle){ clearInterval(timerHandle); timerHandle = null; }
-  if(timerBtn){
-    timerBtn.classList.remove('running');
-    timerBtn.textContent = timerBtn.dataset.label || 'Start';
-    timerBtn = null;
+/* =========================================================
+   LOGGING — tapCheck is the row's circle button.
+   ========================================================= */
+const tapLock = {};
+function itemFor(key){ return planItems(view.plan).find(it=>it.key===key); }
+function snapshot(){
+  const d = state.day;
+  return {d, sets: state.sets[d] ? {...state.sets[d]} : null, completed: !!state.completed[d]};
+}
+function restore(snap){
+  if(snap.sets) state.sets[snap.d] = snap.sets; else delete state.sets[snap.d];
+  if(snap.completed) state.completed[snap.d] = true; else delete state.completed[snap.d];
+  saveState();
+  if(snap.d===state.day){ stopTimer(); refresh(); }
+}
+function tapCheck(key){
+  // Swallow a second tap on the same circle for a beat: collapsing rows
+  // shift the layout and a double-tap must not undo what was just logged.
+  const now = Date.now();
+  if(tapLock[key] > now) return;
+  tapLock[key] = now + 600;
+  const it = itemFor(key), d = state.day;
+  if(setCount(d, key) >= it.target){
+    const snap = snapshot();
+    const allBefore = planTotals(view.plan, d);
+    setCountTo(d, key, 0);
+    if(allBefore.done===allBefore.total) delete state.completed[d];
+    saveState(); refresh();
+    showToast(`${EX[it.id].name} reset`, ()=>restore(snap));
+  } else {
+    logSet(key);
   }
 }
-function runTimer(btn, sec){
-  // Tapping the running button stops it; starting a new one replaces the old.
-  if(timerBtn === btn){ stopTimer(); return; }
-  stopTimer();
-  btn.dataset.label = btn.dataset.label || btn.textContent;
-  timerBtn = btn;
-  let remaining = sec;
-  btn.classList.add('running');
-  btn.textContent = remaining + 's';
-  timerHandle = setInterval(()=>{
-    remaining--;
-    if(remaining<=0){
-      stopTimer();
-      beep();
-    } else if(timerBtn){
-      timerBtn.textContent = remaining + 's';
-    }
-  },1000);
+function logSet(key, fromTimer){
+  const it = itemFor(key), d = state.day;
+  if(!fromTimer && timer.key===key) stopTimer();
+  if(setCount(d, key) >= it.target) return updateNowbar({swap:true}); // already complete
+  const snap = snapshot();
+  const c = setCount(d, key) + 1;
+  setCountTo(d, key, c);
+  const {done, total} = planTotals(view.plan, d);
+  const celebrate = done===total && !state.completed[d];
+  if(celebrate) state.completed[d] = true;
+  saveState();
+  buzz(celebrate ? [14,70,28] : 12);
+  refresh({logged:key, celebrate});
+  if(celebrate) celebrateDay();
+  const what = it.target>1 ? `Round ${c}/${it.target} logged` : 'Logged';
+  showToast(celebrate ? `Day ${d} complete · ${total} sets` : `${what} · ${EX[it.id].name}`, ()=>restore(snap));
 }
-function beep(){
-  try{
-    const ctx = new (window.AudioContext||window.webkitAudioContext)();
-    const o = ctx.createOscillator(); const g = ctx.createGain();
-    o.connect(g); g.connect(ctx.destination);
-    o.frequency.value = 660; g.gain.value = 0.08;
-    o.start(); setTimeout(()=>{o.stop(); ctx.close();}, 220);
-  }catch(e){}
+function celebrateDay(){
+  chime();
+  const head = document.querySelector('.dayhead');
+  if(head.getBoundingClientRect().top < -40){
+    window.scrollTo({top:0, behavior: scrollBehavior()});
+    // replay the stamp once the header is back on screen
+    setTimeout(()=>flash(head, 'celebrate', 1400), reduceMotion.matches ? 0 : 450);
+  }
 }
 
+let toastT = null, toastUndo = null;
+function showToast(msg, undo){
+  const t = document.getElementById('toast');
+  t.querySelector('span').textContent = msg;
+  toastUndo = undo;
+  t.querySelector('button').hidden = !undo;
+  t.classList.add('show');
+  clearTimeout(toastT);
+  toastT = setTimeout(hideToast, 3200);
+}
+function hideToast(){ document.getElementById('toast').classList.remove('show'); toastUndo = null; }
+function undoToast(){ const u = toastUndo; hideToast(); if(u) u(); }
+
+function buzz(p){ try{ if(navigator.vibrate) navigator.vibrate(p); }catch(e){} }
+
+/* =========================================================
+   NAVIGATION
+   ========================================================= */
+function changeDay(delta){
+  const d = Math.min(84, Math.max(1, state.day+delta));
+  if(d===state.day) return;
+  navDir = delta;
+  state.day = d;
+  saveState(); render();
+  window.scrollTo({top:0, behavior: scrollBehavior()});
+}
+function jumpTo(d){
+  if(d===state.day) return;
+  navDir = d>state.day ? 1 : -1;
+  state.day = d; saveState(); render();
+}
+function toggleComplete(){
+  const d = state.day;
+  if(state.completed[d]){ delete state.completed[d]; saveState(); refresh(); return; }
+  stopTimer();
+  state.completed[d] = true;
+  saveState();
+  buzz([14,70,28]);
+  refresh({celebrate:true});
+  chime();
+}
+
+/* =========================================================
+   TIMER — work → rest → next. Time is measured from wall-clock
+   timestamps, so a throttled background tab or a locked phone
+   catches up correctly instead of drifting.
+   ========================================================= */
+const timer = {phase:'idle', key:null, start:0, end:0, handle:null, lastSec:null, go:false};
+let wakeLock = null;
+
+function runTimer(key){
+  // Tapping the running timer stops it; starting another replaces it.
+  if(timer.phase==='work' && timer.key===key){ stopTimer(); return; }
+  startWork(key);
+}
+function startWork(key, at){
+  const it = itemFor(key);
+  if(!it || !it.workSec) return;
+  unlockAudio();
+  clearInterval(timer.handle);
+  const now = at || Date.now();
+  Object.assign(timer, {phase:'work', key, start:now, end:now + it.workSec*1000, lastSec:null, go:false});
+  if(!openRows.has(key)) setOpen(key, true);
+  requestWake();
+  timer.handle = setInterval(tick, 200);
+  updateNowbar({swap:true});
+  tick();
+}
+function startRest(nextKey, from){
+  const sec = view.w.restSec;
+  Object.assign(timer, {phase:'rest', key:nextKey, start:from, end:from + sec*1000, lastSec:null});
+  updateNowbar({swap:true});
+}
+function stopTimer(){
+  clearInterval(timer.handle);
+  const was = timer.phase;
+  Object.assign(timer, {phase:'idle', key:null, handle:null, go:false});
+  releaseWake();
+  if(was!=='idle' && view) updateNowbar({swap:true});
+}
+function tick(){
+  const now = Date.now();
+  if(now >= timer.end){
+    if(timer.phase==='work'){
+      const endedAt = timer.end, key = timer.key;
+      beep(880, 0.22);
+      clearInterval(timer.handle);
+      timer.phase = 'idle'; timer.key = null;
+      logSet(key, true);
+      const next = !state.completed[state.day] && nextUp(view.plan, state.day);
+      if(next && next.item.sec==='c' && view.w.restSec){
+        startRest(next.item.key, endedAt);
+        timer.handle = setInterval(tick, 200);
+        return tick();
+      }
+      releaseWake();
+      return updateNowbar({swap:true});
+    }
+    if(timer.phase==='rest'){
+      clearInterval(timer.handle);
+      beep(660, 0.12); setTimeout(()=>beep(990, 0.2), 150);
+      buzz([20,60,20]);
+      Object.assign(timer, {phase:'idle', key:null, go:true});
+      releaseWake();
+      return updateNowbar({swap:true});
+    }
+    return;
+  }
+  const remain = Math.ceil((timer.end - now)/1000);
+  const frac = (timer.end - now) / (timer.end - timer.start);
+  const nb = document.getElementById('nowbar');
+  nb.querySelector('.rg-arc').style.strokeDashoffset = 1 - frac;
+  if(remain !== timer.lastSec){
+    timer.lastSec = remain;
+    nb.querySelector('.nb-num').textContent = remain;
+    const inline = document.querySelector(`#row-${timer.key} .timerbtn`);
+    if(inline && timer.phase==='work') inline.textContent = `Stop · ${remain}s`;
+    if(remain<=3){ flash(nb.querySelector('.nb-ring'), 'tick', 430); beep(timer.phase==='work' ? 520 : 440, 0.06); }
+  }
+}
+
+const ICON_PLAY = `<svg viewBox="0 0 24 24"><path class="play" d="M8 5.5v13l11-6.5z"/></svg>`;
+const ICON_CHECK = `<svg viewBox="0 0 24 24"><path d="M5.5 12.5l4 4L18.5 7.5"/></svg>`;
+
+function updateNowbar(opts={}){
+  const nb = document.getElementById('nowbar');
+  if(!view){ nb.classList.remove('show'); return; }
+  const d = state.day, {w, plan} = view;
+  const text = nb.querySelector('.nb-text'), label = nb.querySelector('.nb-label'),
+        name = nb.querySelector('.nb-name'), num = nb.querySelector('.nb-num'),
+        arc = nb.querySelector('.rg-arc'), action = nb.querySelector('.nb-action');
+  let phase = timer.phase;
+  const next = nextUp(plan, d);
+  if(phase==='idle') phase = state.completed[d] || !next ? 'done' : 'ready';
+  const roundTxt = (it, r) => it.target>1 ? `Round ${r}/${it.target}` : SECTION_LABEL[it.sec];
+
+  document.querySelectorAll('.timerbtn').forEach(b=>{
+    const key = b.closest('.exrow').dataset.key;
+    const on = timer.phase==='work' && timer.key===key;
+    b.classList.toggle('running', on);
+    if(!on) b.textContent = `Start ${w.workSec}s`;
+  });
+
+  let key = null, act = null, actLabel = '', ghost = false;
+  if(phase==='work'){
+    const it = itemFor(timer.key);
+    const r = Math.min(it.target, setCount(d, it.key)+1);
+    label.textContent = `Work · ${roundTxt(it, r)}`;
+    name.textContent = EX[it.id].name;
+    key = it.key; act = stopTimer; actLabel = 'Stop'; ghost = true;
+    num.textContent = Math.ceil((timer.end-Date.now())/1000);
+  } else if(phase==='rest'){
+    const it = itemFor(timer.key);
+    label.textContent = 'Rest · next up';
+    name.textContent = EX[it.id].name;
+    key = it.key; act = ()=>{ stopTimer(); timer.go = false; }; actLabel = 'Skip'; ghost = true;
+    num.textContent = Math.ceil((timer.end-Date.now())/1000);
+  } else if(phase==='ready'){
+    const it = next.item;
+    label.textContent = `${timer.go ? 'Go' : 'Next'} · ${roundTxt(it, next.round)}`;
+    name.textContent = EX[it.id].name;
+    key = it.key;
+    if(it.workSec){ act = ()=>startWork(it.key); actLabel = `Start ${it.workSec}s`; num.innerHTML = ICON_PLAY; }
+    else { act = ()=>tapCheck(it.key); actLabel = 'Done'; num.innerHTML = ICON_CHECK; }
+    arc.style.strokeDashoffset = 1;
+  } else {
+    label.textContent = `Day ${d} complete`;
+    if(d<84){
+      const nw = getWorkout(d+1);
+      name.textContent = `Next: Day ${d+1} · ${nw.title}`;
+      act = ()=>changeDay(1); actLabel = `Day ${d+1} →`;
+    } else {
+      name.textContent = 'Program complete. 84 days.';
+    }
+    num.innerHTML = ICON_CHECK;
+    arc.style.strokeDashoffset = 0;
+  }
+  if(phase==='work' || phase==='rest') arc.style.strokeDashoffset = 1 - (timer.end-Date.now())/(timer.end-timer.start);
+  arc.style.opacity = phase==='ready' ? 0 : 1;
+
+  const changed = nb.dataset.phase !== phase || nb.dataset.key !== String(key);
+  nb.dataset.phase = phase;
+  nb.dataset.key = String(key);
+  nb.classList.toggle('go', phase==='ready' && timer.go);
+  if(changed && (opts.swap || opts.logged || opts.celebrate)) flash(text, 'swap', 340);
+  action.textContent = actLabel;
+  action.hidden = !act;
+  action.classList.toggle('ghost', ghost);
+  nowAction = act;
+  nowKey = key;
+  nb.classList.add('show');
+}
+let nowAction = null, nowKey = null;
+function nowbarAction(){ if(nowAction) nowAction(); }
+function nowbarReveal(){
+  if(!nowKey) return;
+  const row = document.getElementById('row-'+nowKey);
+  if(!openRows.has(nowKey)) setOpen(nowKey, true);
+  window.scrollTo({top: window.scrollY + row.getBoundingClientRect().top - 90, behavior: scrollBehavior()});
+}
+
+/* screen stays on while a timer runs (where supported) */
+async function requestWake(){
+  try{ if('wakeLock' in navigator && !wakeLock) wakeLock = await navigator.wakeLock.request('screen'); }catch(e){}
+}
+function releaseWake(){ try{ if(wakeLock){ wakeLock.release(); wakeLock = null; } }catch(e){} }
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState==='visible'){
+    if(timer.phase!=='idle'){ wakeLock = null; requestWake(); tick(); }
+  }
+});
+
+/* =========================================================
+   SOUND — one shared AudioContext, unlocked on the first tap
+   (iOS only allows audio that starts from a user gesture).
+   ========================================================= */
+let audioCtx = null;
+function unlockAudio(){
+  try{
+    if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    if(audioCtx.state==='suspended') audioCtx.resume();
+  }catch(e){}
+}
+function beep(freq=660, dur=0.22, when=0, vol=0.08){
+  try{
+    if(!audioCtx) unlockAudio();
+    const t = audioCtx.currentTime + when;
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.connect(g); g.connect(audioCtx.destination);
+    o.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t+0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t+dur);
+    o.start(t); o.stop(t+dur+0.02);
+  }catch(e){}
+}
+function chime(){ beep(523, 0.18, 0, 0.06); beep(659, 0.18, 0.1, 0.06); beep(784, 0.4, 0.2, 0.07); }
 loadState();
 </script>
 

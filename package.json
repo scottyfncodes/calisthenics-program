@@ -1,0 +1,13 @@
+{
+  "name": "morning-calisthenics",
+  "private": true,
+  "description": "Single-file 12-week calisthenics program. No build step; tooling here is for tests only.",
+  "scripts": {
+    "check": "node scripts/check.js",
+    "test": "playwright test",
+    "validate": "npm run check && npm test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1"
+  }
+}
