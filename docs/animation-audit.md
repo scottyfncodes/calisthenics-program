@@ -1,6 +1,6 @@
 # Exercise animation audit
 
-Scope: all 58 exercises in `EX` (`index.html`) and their demo animations.
+Scope: all 69 exercises in `EX` (`js/exercises.js`); the rig lives in `js/figure.js` and their demo animations.
 Method: each old animation was rendered frame by frame in Chromium and inspected,
 then rebuilt and re-inspected the same way. Every new frame of every animation is also
 checked automatically by `npm run check` (CI runs it before each deploy).
@@ -106,6 +106,30 @@ own limb lengths. As a result:
 | Chest Opener Stretch | Odd three-quarter shape. | Side view: hands clasped behind, straight arms lift back and away, chest lifts. | — |
 | Thread the Needle | The arm just swung. | The threading arm slides under the body (seen end-on, so short) while that shoulder and the side of the head lower to the floor and the hips stay over the knees. | — |
 | Quad Stretch | Front-view leg kick; the hand never held the ankle. | Standing tall on one leg, the other heel to the glute with the hand holding the ankle, knees together, hips slightly forward. | — |
+
+## New exercises (on-demand release)
+
+Eleven exercises added for the on-demand app have animations built on the same rig and
+pass the same automated checks. Each was rendered at 8 phases in Chromium at ~90 px and
+~280 px and inspected. The hanging moves share one builder: both hands are fixed on the
+bar (seen end-on as a small ring under its strap) and the body can only move by bending
+the elbows or by moving the shoulder girdle. Hanging figures are framed a little smaller
+than the others (the frame grows to keep the floor in shot), and the knees are bent with
+the feet behind so the feet stay clear of the floor.
+
+| Exercise | What the demo shows | Remaining uncertainty |
+|---|---|---|
+| Active Dead Hang | Straight arms, shoulders held down away from the ears; only a slight breath and shoulder setting move. Hold. | Subtle at phone size. In a side view the near arm crosses the head. |
+| Scapular Pull-up | From a passive hang (shoulders up by the ears), the shoulders pull down and the body rises about 3 units with the elbows straight, then lowers. | Small motion; at phone size it reads mostly as the head and shoulders bobbing. |
+| Pull-up | Full hang, shoulders set down first, then the elbows drive down toward the ribs; the shoulders travel slightly back so the head passes behind the bar and the chin clears it; full lowering. The arms are drawn a little short because the grip is wider than the shoulders. | To keep the chin clearly over the bar, the shoulders come up to roughly bar height, a little higher than most people reach. |
+| Chin-up | Same hang and rhythm, but the arms work in the side plane: the elbows travel down in front of the body, the torso stays upright and the chest comes higher with the head tipped back. | **Flag for review:** at phone size the difference from the pull-up (torso lean, elbow path) is subtle. |
+| Negative Pull-up | Starts with the chin over the bar, lowers smoothly for about 5 s to a full hang, then the feet come down to the floor and the figure jumps back to the top in under a second. | The reset is a floor jump; a step or box isn't drawn. |
+| Hanging Knee Raise | Arms straight, shoulders engaged, the hands and shoulders don't move (no swing). The knees draw up past hip height (hip flexion ~120°) while the pelvis curls up (the back rounds), then lower slowly. | Starts with the knees bent and the feet behind, since straight legs would reach the floor in this frame. |
+| Bench Dip | Hands on a bench edge behind the hips, legs out with the heels fixed on the floor. The elbows bend straight back to about 90° and the hips drop close to the bench, then press up. | With the heels fixed, the knees bend from about 15° at the top to about 60° at the bottom. Truly straight legs would need the hips to move back into the bench. |
+| Parallel Bar Dip | Support on straight arms over a bar on posts, knees bent with the feet behind and off the floor. Lowers with a forward lean until the upper arm is level and the shoulder is just below the elbow (forearm vertical), then presses up. | Both bars overlap in the side view, so they read as one. The lean (~30° at the bottom) is on the larger side of "slight". |
+| Lying Leg Raise | Lying on the back, arms by the sides; straight legs rise from a hover to vertical (hip flexion ~90°) and lower slowly. The torso stays flat. | Low-back arching can't be shown on a straight stick spine. |
+| Single-Leg Glute Bridge | The far foot is planted (fixed) and the near leg is held straight in line with its thigh; the hips lift until shoulders, hips and knee make one line, pause, lower. Shoulders stay down. | Hips staying level side to side can't be seen from the side. |
+| Single-Leg Romanian Deadlift | Standing on the near leg with the foot flat and fixed and the knee soft. The hips hinge back with a flat back until the torso is near level, while the free leg reaches back in line with the torso; the arms hang toward the floor. Then the figure stands back up. | Square hips can't be seen from the side. |
 
 ## Remaining limitations and review requests
 

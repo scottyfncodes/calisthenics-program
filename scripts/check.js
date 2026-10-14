@@ -1,45 +1,68 @@
-// Static checks for the single-file app (there is no build or type system):
-// every inline <script> must parse, and every exercise referenced by the
-// program must exist in the EX library.
+// Static checks (there is no build or type system): every inline <script> in
+// both pages and every shared script must parse, every exercise referenced by
+// the classic program must exist in the EX library, and every exercise must
+// carry the taxonomy the workout planner relies on.
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 
-const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
-const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m => m[1]);
-if (!scripts.length) throw new Error('no inline <script> found');
-
+const root = path.join(__dirname, '..');
+const read = f => fs.readFileSync(path.join(root, f), 'utf8');
 let failed = false;
-scripts.forEach((src, i) => {
-  try { new vm.Script(src, { filename: `index.html <script #${i + 1}>` }); }
-  catch (e) { failed = true; console.error(`Syntax error: ${e.message}`); }
+const fail = (...m) => { failed = true; console.error(...m); };
+
+const inline = f => [...read(f).matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m => m[1]);
+const sources = [];
+for (const page of ['index.html', 'program.html']) {
+  const s = inline(page);
+  if (!s.length) fail(`${page}: no inline <script> found`);
+  s.forEach((src, i) => sources.push([`${page} <script #${i + 1}>`, src]));
+}
+const shared = fs.readdirSync(path.join(root, 'js')).filter(f => f.endsWith('.js'));
+shared.forEach(f => sources.push([`js/${f}`, read(`js/${f}`)]));
+sources.forEach(([name, src]) => {
+  try { new vm.Script(src, { filename: name }); }
+  catch (e) { fail(`Syntax error in ${name}: ${e.message}`); }
 });
 
-// Evaluate just the data definitions in a sandbox and cross-check references.
-const src = scripts[0];
-const dataEnd = src.indexOf('const WORK_BASE');
-const ctx = {};
-vm.runInNewContext(src.slice(0, dataEnd) + '; this.out = {EX, PHASES, WARMUPS, COOLDOWNS, MOBILITY_DAY, REST_DAY};', ctx);
-const { EX, PHASES, WARMUPS, COOLDOWNS, MOBILITY_DAY, REST_DAY } = ctx.out;
+const { EX, PATTERNS, EQUIPMENT, RESTRICTIONS } = require('../js/exercises.js');
+
+// classic program: evaluate just its data definitions and cross-check references
+const prog = inline('program.html')[0];
+const ctx = { EX };
+vm.runInNewContext(prog.slice(0, prog.indexOf('const WORK_BASE')) + '; this.out = {PHASES, WARMUPS, COOLDOWNS, MOBILITY_DAY, REST_DAY};', ctx);
+const { PHASES, WARMUPS, COOLDOWNS, MOBILITY_DAY, REST_DAY } = ctx.out;
 const refs = [
   ...PHASES.flatMap(p => Object.values(p.days).flatMap(d => d.circuit)),
   ...Object.values(WARMUPS).flat(), ...Object.values(COOLDOWNS).flat(),
   ...MOBILITY_DAY, ...REST_DAY,
 ];
 const missing = [...new Set(refs.filter(id => !EX[id]))];
-if (missing.length) { failed = true; console.error('Unknown exercise ids:', missing.join(', ')); }
+if (missing.length) fail('Unknown exercise ids:', missing.join(', '));
 
-if (!failed) console.log(`check ok: ${scripts.length} script block(s) parse, ${new Set(refs).size} exercise refs resolve`);
+// taxonomy: every field the planner reads must be present and valid
+for (const [id, e] of Object.entries(EX)) {
+  const bad = [];
+  if (!e.name || !e.type || !e.cue) bad.push('name/type/cue');
+  if (!Array.isArray(e.cues) || !e.cues.length) bad.push('cues');
+  if (!['main', 'cond', 'warm', 'cool'].includes(e.role)) bad.push('role');
+  if (!Array.isArray(e.pat) || !e.pat.length || e.pat.some(p => !PATTERNS[p])) bad.push('pat');
+  if (!(e.lvl >= 1 && e.lvl <= 5)) bad.push('lvl');
+  if (!Array.isArray(e.eq) || e.eq.some(q => !EQUIPMENT[q])) bad.push('eq');
+  if (!Array.isArray(e.stress) || e.stress.some(q => !RESTRICTIONS[q])) bad.push('stress');
+  if (e.m === 'reps') { if (!(e.reps && e.reps[0] > 0 && e.reps[1] >= e.reps[0] && e.tempo > 0)) bad.push('reps/tempo'); }
+  else if (e.m === 'time') { if (!(e.sec && e.sec[0] > 0 && e.sec[1] >= e.sec[0])) bad.push('sec'); }
+  else bad.push('m');
+  if (bad.length) fail(`exercise ${id}: bad ${bad.join(', ')}`);
+}
+
+if (!failed) console.log(`check ok: ${sources.length} script(s) parse, ${new Set(refs).size} program refs resolve, ${Object.keys(EX).length} exercises carry a full taxonomy`);
 
 // ---------------------------------------------------------------------------
 // Figure rig: every exercise must have an animation, and every frame of every
 // animation must be anatomically plausible. The engine is pure geometry, so it
 // runs here without a DOM. Tolerances are in SVG units (limbs are drawn 5 wide).
-const eStart = src.indexOf('/* FIGURE ENGINE START */'), eEnd = src.indexOf('/* FIGURE ENGINE END */');
-if (eStart < 0 || eEnd < 0) { console.error('figure engine markers missing'); process.exit(1); }
-const fx = {};
-vm.runInNewContext(src.slice(eStart, eEnd) + '; this.out = {MOVES, pose, frameOf, BONE, G, FLOOR, ARM, LEG};', fx);
-const { MOVES, pose, frameOf, BONE, G, FLOOR, ARM, LEG } = fx.out;
+const { MOVES, pose, frameOf, BONE, G, FLOOR, ARM, LEG } = require('../js/figure.js');
 const wrap = a => ((a % 360) + 540) % 360 - 180;
 const ang = (a, b) => Math.atan2(b[1] - a[1], b[0] - a[0]) * 180 / Math.PI;
 const dist = (a, b) => Math.hypot(b[0] - a[0], b[1] - a[1]);
