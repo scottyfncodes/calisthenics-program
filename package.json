@@ -1,10 +1,12 @@
 {
-  "name": "morning-calisthenics",
+  "name": "calisthenics-on-demand",
   "private": true,
-  "description": "Single-file 12-week calisthenics program. No build step; tooling here is for tests only.",
+  "description": "On-demand calisthenics: pick your time, get a programmed workout. No build step; tooling here is for checks and tests only.",
   "scripts": {
     "check": "node scripts/check.js",
-    "test": "playwright test",
+    "test:unit": "node --test \"tests/unit/*.test.js\"",
+    "test:e2e": "playwright test",
+    "test": "npm run test:unit && npm run test:e2e",
     "validate": "npm run check && npm test"
   },
   "devDependencies": {

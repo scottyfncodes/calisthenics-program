@@ -2,7 +2,7 @@
 const { test, expect } = require('@playwright/test');
 const path = require('path');
 
-const URL = 'file://' + path.join(__dirname, '..', 'index.html');
+const URL = 'file://' + path.join(__dirname, '..', '..', 'program.html');
 const KEY = 'cal-program-state';
 
 // Day 1 (Foundation, Push): 2 warm-up, 3 circuit moves x 3 rounds, 2 cool-down = 13 sets.

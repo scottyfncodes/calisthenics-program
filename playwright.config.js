@@ -2,7 +2,7 @@
 const { defineConfig, devices } = require('@playwright/test');
 
 module.exports = defineConfig({
-  testDir: 'tests',
+  testDir: 'tests/e2e',
   timeout: 30_000,
   fullyParallel: true,
   reporter: 'list',
