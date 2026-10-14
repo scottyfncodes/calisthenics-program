@@ -8,7 +8,7 @@ A self-contained, single-file 12-week bodyweight calisthenics program. No build 
 
 - 84-day program across 4 progressive phases (Foundation → Building → Strength → Performance)
 - Daily push / legs / core / pull / full-body circuits, plus mobility and recovery days
-- Animated stick-figure demos and form cues for every exercise
+- Animated stick-figure demos and form cues for every exercise, drawn by a small kinematic rig (fixed bone lengths, planted hands/feet, per-exercise key poses) — see `docs/animation-audit.md`
 - Per-move set logging: tap a move's circle to log it; circuit moves fill one pip per round
 - The current move is always in focus — the circuit advances round-robin (every move once per round)
 - A now-bar pinned to the bottom of the screen shows what you're doing, how long is left, and what's next:
@@ -33,6 +33,6 @@ The tooling is for development only; the app itself still ships as one HTML file
 
 ```
 npm install
-npm run check   # inline scripts parse + every exercise reference resolves
+npm run check   # inline scripts parse, every exercise reference resolves, every animation frame passes the rig's anatomy checks
 npm test        # Playwright: full workout flows on a mobile and a desktop viewport
 ```

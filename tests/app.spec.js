@@ -289,8 +289,12 @@ test('every day of the program renders', async ({ page }) => {
 test('reduced motion keeps every state change without the movement', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await open(page);
-  const anim = await page.evaluate(() => getComputedStyle(document.querySelector('#row-w0 .fig .figure, #row-w0 .fig g')).animationName);
-  expect(anim).toBe('none');
+  // the open demo is drawn at its key position and does not move
+  const fig = () => page.evaluate(() => document.querySelector('#row-w0 .fig .aN').getAttribute('d'));
+  const still = await fig();
+  expect(still).toMatch(/^M/);
+  await page.clock.runFor(1500);
+  expect(await fig()).toBe(still);
   const dur = await page.evaluate(() => getComputedStyle(document.querySelector('.exbody')).transitionDuration);
   expect(dur).toBe('0.001s');
   for (const k of DAY1_ORDER) await log(page, k);
@@ -315,4 +319,26 @@ test('layout fits the screen and the now-bar never hides content', async ({ page
   const note = await page.locator('.footnote').boundingBox();
   const bar = await page.locator('.nb').boundingBox();
   expect(note.y + note.height).toBeLessThanOrEqual(bar.y);
+});
+
+test('the open move demo animates, and every demo on every day is drawn', async ({ page }) => {
+  const errors = await open(page);
+  const fig = () => page.evaluate(() => document.querySelector('#row-w0 .fig .aN').getAttribute('d'));
+  const a = await fig();
+  await page.clock.runFor(700);
+  const b = await fig();
+  expect(b).not.toBe(a);
+  const blank = await page.evaluate(async () => {
+    const out = [];
+    for (let d = 1; d <= 84; d++) {
+      state.day = d; render();
+      document.querySelectorAll('.fig').forEach(svg => {
+        const d1 = svg.querySelector('.torso').getAttribute('d');
+        if (!d1 || /NaN/.test(svg.innerHTML)) out.push(`day ${d}: ${svg.dataset.type}`);
+      });
+    }
+    return out;
+  });
+  expect(blank).toEqual([]);
+  expect(errors).toEqual([]);
 });

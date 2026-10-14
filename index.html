@@ -285,19 +285,16 @@ button:focus-visible{outline:2px solid var(--chalk); outline-offset:2px;}
 }
 .timerbtn.running{border-color:var(--accent); color:var(--accent);}
 
-/* collapsed demos don't need to keep animating off-screen */
-.exrow:not(.open) .fig *{animation-play-state:paused;}
-
-/* figure */
-.fig line, .fig circle{fill:none; stroke:var(--chalk); stroke-width:6; stroke-linecap:round;}
+/* figure: drawn each frame by the kinematic rig in the script (see drawFig) */
+.fig path{fill:none; stroke:var(--chalk); stroke-width:5; stroke-linecap:round; stroke-linejoin:round;}
 .fig .head{fill:var(--chalk);}
-.fig .hands{fill:var(--chalk);}
-/* ground reference line for floor-based exercises, so the posture reads
-   as "lying down" rather than "standing and rotated" */
+/* far-side arm and leg in side views, so near and far limbs stay readable */
+.fig .far{opacity:0.42;}
+/* ground reference line; it scrolls (dashes) when the figure travels */
 .fig .floor{stroke:var(--chalk-dim); stroke-width:1.5; opacity:0.45; stroke-linecap:butt;}
-.fig .bar{stroke:var(--chalk-dim); stroke-width:2; opacity:0.5; stroke-linecap:round;}
-.fig .i-leg{stroke:var(--chalk); stroke-width:4; stroke-linecap:round;}
-.fig .sp-leg{stroke:var(--chalk); stroke-width:4; stroke-linecap:round;}
+.fig .floor.ticks{stroke-dasharray:4 4; opacity:0.7;}
+.fig .bar{stroke:var(--chalk-dim); stroke-width:2; opacity:0.6;}
+.fig .mat{fill:none; stroke:var(--chalk-dim); stroke-width:1.5; opacity:0.45;}
 
 /* page entrance when the day changes: content slides in from the
    direction you navigated, rows settle in a quick stagger */
@@ -382,11 +379,10 @@ button:focus-visible{outline:2px solid var(--chalk); outline-offset:2px;}
   .check:hover .ck-track{stroke:var(--chalk-dim);}
 }
 
-/* Respect the OS "reduce motion" setting: freeze the demo at a readable
-   mid-rep pose instead of looping, and drop movement from state changes.
+/* Respect the OS "reduce motion" setting: the demo is drawn still at its
+   key position (the script skips the animation loop), and drop movement from state changes.
    Every state is still conveyed by color, fill and text. */
 @media (prefers-reduced-motion: reduce){
-  .fig *{animation:none !important;}
   *, *::before, *::after{
     animation-duration:1ms !important; animation-iteration-count:1 !important; animation-delay:0ms !important;
     transition-duration:1ms !important; transition-delay:0ms !important;
@@ -461,9 +457,9 @@ const EX = {
   kneePushup:{name:"Knee Push-up", type:"kneepushup", cue:"Knees down, straight line from knee to head. Lower chest to the floor."},
   pushup:{name:"Push-up", type:"pushup", cue:"Hands under shoulders, body rigid plank. Chest to floor, drive back up."},
   pikePushup:{name:"Pike Push-up", type:"pike", cue:"Hips high, forming an upside-down V. Lower the top of your head toward the floor."},
-  diamondPushup:{name:"Diamond Push-up", type:"pushup", cue:"Hands together under chest, thumbs and index fingers touching. Lower with elbows tucked."},
-  archerPushup:{name:"Archer Push-up", type:"pushup", cue:"Wide hands, shift weight to one side as you lower, straight arm stays extended."},
-  pseudoPlanchePushup:{name:"Pseudo Planche Push-up", type:"pushup", cue:"Hands by your hips, lean weight forward past your fingertips as you lower."},
+  diamondPushup:{name:"Diamond Push-up", type:"diamondpushup", cue:"Hands together under chest, thumbs and index fingers touching. Lower with elbows tucked."},
+  archerPushup:{name:"Archer Push-up", type:"archerpushup", cue:"Wide hands, shift weight to one side as you lower, straight arm stays extended."},
+  pseudoPlanchePushup:{name:"Pseudo Planche Push-up", type:"ppushup", cue:"Hands by your hips, fingers turned out, lean your shoulders forward past your hands, then lower with elbows tucked."},
 
   // legs
   squat:{name:"Bodyweight Squat", type:"squat", cue:"Feet shoulder-width, sit hips back and down, chest up. Drive through the heels to stand."},
@@ -472,8 +468,8 @@ const EX = {
   reverseLunge:{name:"Reverse Lunge", type:"lunge", cue:"Step one foot back, drop the back knee toward the floor, front shin stays vertical."},
   gluteBridgeMarch:{name:"Glute Bridge March", type:"glutemarch", cue:"Hold the bridge position, lift one knee toward your chest at a time without dropping your hips."},
   jumpSquat:{name:"Jump Squat", type:"jumpsquat", cue:"Squat down then explode straight up, land soft back into the squat."},
-  bulgarianSplitSquat:{name:"Bulgarian Split Squat", type:"bulgariansplit", cue:"Rear foot up on a chair behind you, lower the front knee straight down."},
-  walkingLunge:{name:"Walking Lunge", type:"lunge", cue:"Step forward into a lunge, drive up and step the back foot through into the next lunge."},
+  bulgarianSplitSquat:{name:"Bulgarian Split Squat", type:"bulgariansplit", cue:"Rear foot up on a chair behind you, lower your back knee straight down toward the floor."},
+  walkingLunge:{name:"Walking Lunge", type:"walklunge", cue:"Step forward into a lunge, drive up and step the back foot through into the next lunge."},
   pistolSquat:{name:"Assisted Pistol Squat", type:"pistol", cue:"One leg extended forward, hold a doorframe for balance, lower slow onto the standing leg."},
   jumpLunge:{name:"Jump Lunge", type:"jumplunge", cue:"From a lunge, jump and switch legs mid-air, land soft into the opposite lunge."},
 
@@ -490,28 +486,28 @@ const EX = {
 
   // pull
   superman:{name:"Superman", type:"superman", cue:"Lie face down, lift arms, chest and legs off the floor together, hold, lower slow."},
-  reverseSnowAngel:{name:"Reverse Snow Angel", type:"snowangel", cue:"Face down, sweep straightened arms from your hips up overhead and back."},
+  reverseSnowAngel:{name:"Reverse Snow Angel", type:"snowangel", cue:"Face down, arms hovering just off the floor, sweep them straight from your hips out and up overhead, then back."},
   proneYRaise:{name:"Prone Y-Raise", type:"yraise", cue:"Face down, arms forming a Y overhead, lift them off the floor squeezing your upper back."},
   towelRow:{name:"Towel Row", type:"row", cue:"Loop a towel around a sturdy post, lean back, pull your chest to your hands."},
   tableRow:{name:"Table Row", type:"tablerow", cue:"Lie under a sturdy table, grip the edge, pull your chest up to the table."},
   scapularSqueeze:{name:"Scapular Squeeze Hold", type:"scapsqueeze", cue:"Arms at your sides, squeeze your shoulder blades together and hold."},
-  archerTableRow:{name:"Archer Table Row", type:"tablerow", cue:"Table row, but pull mostly with one arm while the other stays lighter."},
+  archerTableRow:{name:"Archer Table Row", type:"archertablerow", cue:"Table row, but pull mostly with one arm while the other stays lighter."},
 
   // full body / conditioning
   stepBackBurpee:{name:"Step-Back Burpee", type:"burpeestep", cue:"Hands down, step feet back to a plank one at a time, step back in, stand up."},
-  halfBurpee:{name:"Half Burpee", type:"burpeestep", cue:"Hands down, jump feet back to a plank, jump them back in, stand up (no push-up, no jump)."},
+  halfBurpee:{name:"Half Burpee", type:"halfburpee", cue:"Hands down, jump feet back to a plank, jump them back in, stand up (no push-up, no jump)."},
   burpee:{name:"Burpee", type:"burpee", cue:"Squat, hands down, jump back to plank, push-up, jump feet in, jump up reaching overhead."},
-  burpeeTuckJump:{name:"Burpee Tuck Jump", type:"burpee", cue:"Full burpee, finish with a jump and pull both knees up toward your chest."},
-  bearCrawlHold:{name:"Bear Crawl Hold", type:"bearcrawl", cue:"Hands and toes down, knees hovering an inch off the floor. Hold, breathe."},
+  burpeeTuckJump:{name:"Burpee Tuck Jump", type:"burpeetuck", cue:"Full burpee, finish with a jump and pull both knees up toward your chest."},
+  bearCrawlHold:{name:"Bear Crawl Hold", type:"bearhold", cue:"Hands and toes down, knees hovering an inch off the floor. Hold, breathe."},
   bearCrawl:{name:"Bear Crawl", type:"bearcrawl", cue:"Knees hovering, crawl forward moving opposite hand and foot together."},
-  starJump:{name:"Star Jump", type:"jumpingjack", cue:"Squat slightly then jump, throwing arms and legs out into a star shape."},
+  starJump:{name:"Star Jump", type:"starjump", cue:"Squat slightly then jump, throwing arms and legs out into a star shape."},
 
   // mobility / rest
   worldsGreatest:{name:"World's Greatest Stretch", type:"kneelrotate", cue:"Lunge forward, drop the back knee, plant both hands inside the front foot, rotate one arm to the sky."},
   thoracicRotation:{name:"Thoracic Rotation", type:"quadreach", cue:"All fours, one hand behind your head, rotate your elbow down then up toward the ceiling."},
   standingFold:{name:"Standing Forward Fold", type:"fold", cue:"Feet hip-width, hinge at the hips and let your head hang heavy, soft knees."},
   childsPose:{name:"Child's Pose", type:"childspose", cue:"Kneel, sit hips to heels, walk hands forward and let your chest sink toward the floor."},
-  hamstringStretch:{name:"Hamstring Stretch", type:"fold", cue:"Seated or standing, straighten one leg, hinge forward from the hips, chest toward the shin."},
+  hamstringStretch:{name:"Hamstring Stretch", type:"hamstring", cue:"Seated or standing, straighten one leg, hinge forward from the hips, chest toward the shin."},
   hipFlexorStretch:{name:"Hip Flexor Stretch", type:"kneelunge", cue:"Kneeling lunge, tuck your tailbone under and gently shift your hips forward."},
   chestOpener:{name:"Chest Opener Stretch", type:"chestopener", cue:"Clasp hands behind your back, lift your chest, gently pull shoulders down and back."},
   threadNeedle:{name:"Thread the Needle", type:"quadthread", cue:"All fours, thread one arm under the other, rest your shoulder and ear on the floor."},
@@ -649,498 +645,852 @@ function saveState(){
 }
 
 /* =========================================================
-   STICK FIGURE SVG
+   STICK FIGURE — kinematic rig
    ========================================================= */
-/* Posture routing. An exercise is only readable if the figure is drawn in the
-   posture the exercise actually happens in, so each group gets its own rig. */
-const PRONE_TYPES = new Set(["pushup","plank","mountainclimber","kneepushup","kneeplank"]);   // face down, on hands/forearms
-const SUPINE_TYPES = new Set(["crunch","deadbug","glutebridge","glutemarch","hollow","vup"]); // lying on the back
-const QUAD_TYPES = new Set(["birddog","catcow","quadreach","quadthread","bearcrawl"]);  // on all fours
-const LYING_TYPES = new Set(["superman","snowangel","yraise"]);                  // lying face down, flat
-const PIKE_TYPES = new Set(["pike"]);                                            // hips high, inverted V
-const INCLINE_TYPES = new Set(["tablerow"]);                                     // lying under a fixed bar, pulling up
-const KNEEL_TYPES = new Set(["childspose"]);                                     // kneeling, hips to heels
-const SIDE_TYPES = new Set(["sideplank"]);                                       // lying on the side, propped on one forearm
-const INCLINE_PUSHUP_TYPES = new Set(["inclinepushup"]);                         // hands elevated on a couch/table edge
-const LUNGE_TYPES = new Set(["lunge","jumplunge","kneelunge","kneelrotate","pistol","bulgariansplit"]); // side profile: front knee bent, back leg trailing
-const ROW_TYPES = new Set(["row"]); // standing, leaning back against a towel anchored to a fixed post
-const CHEST_TYPES = new Set(["chestopener"]); // standing, hands clasped and pulled behind the back
+/* FIGURE ENGINE START */
+/* One skeleton for every exercise. Bones have fixed lengths, so a figure can
+   never stretch, shrink or come apart; each move is a set of key poses and
+   the rig is solved per frame:
+   - joints are placed by forward kinematics from the hip, or
+   - a hand or foot that is planted on something is given as a fixed target
+     and the elbow/knee is solved (two-bone IK), so contacts don't slide.
+   Coordinates are SVG user units (y down), angles in degrees (0 = +x,
+   90 = straight down). Side views are drawn with the far-side limbs dimmed.
+   "face" is the body's handedness on screen: +1 for a figure standing and
+   facing right (or that pose rotated: supine head-left, prone head-right),
+   -1 for its mirror image. Knees and elbows bend the correct way round for
+   that frame, and scripts/check.js verifies it for every frame of every move. */
+const BONE = {torso:25, neck:9, headR:6.5, ua:14, fa:16, th:19, sh:19, ft:6};
+const ARM = BONE.ua + BONE.fa, LEG = BONE.th + BONE.sh;
+const FLOOR = 90, G = 87.5;            // G: centre line of a limb resting on the floor
+const HEAD_DOWN = FLOOR - BONE.headR;  // head centre when the head rests on the floor
+const STAND = G - LEG + 0.5;           // standing hip height, knees soft (never locked)
 
+const D2R = Math.PI/180;
+const dir = a => [Math.cos(a*D2R), Math.sin(a*D2R)];
+const add = (p, a, len) => { const v = dir(a); return [p[0]+v[0]*len, p[1]+v[1]*len]; };
+const ang = (a, b) => Math.atan2(b[1]-a[1], b[0]-a[0])/D2R;
+const dist = (a, b) => Math.hypot(b[0]-a[0], b[1]-a[1]);
+const clamp = (x, lo, hi) => Math.max(lo, Math.min(hi, x));
+const lerp = (a, b, k) => a + (b-a)*k;
+const wrap = a => ((a % 360) + 540) % 360 - 180;
+const lerpAng = (a, b, k) => a + wrap(b-a)*k;
+// bisection root-finder for the geometry helpers below (fn must change sign on [lo,hi])
+function solve(fn, lo, hi){
+  let flo = fn(lo);
+  for(let i=0;i<48;i++){ const mid=(lo+hi)/2, fm=fn(mid); if((fm<0)===(flo<0)){ lo=mid; flo=fm; } else hi=mid; }
+  return (lo+hi)/2;
+}
+// two-bone IK: root, target, bone lengths, bend side s (+1/-1) -> [upper, lower] angles
+function ikAngles(root, target, a, b, s){
+  const d = clamp(dist(root, target), Math.abs(a-b)+0.01, a+b-0.001);
+  const base = ang(root, target);
+  const A = Math.acos(clamp((a*a + d*d - b*b)/(2*a*d), -1, 1))/D2R;
+  const u = base + s*A, m = add(root, u, a);
+  return [u, ang(m, target)];
+}
+// circle-circle intersection: the higher (smaller y) point at distance ra from A and rb from B
+function meetUp(A, ra, B, rb){
+  const d = dist(A, B), x = (ra*ra - rb*rb + d*d)/(2*d), h = Math.sqrt(Math.max(0, ra*ra - x*x));
+  const ux = (B[0]-A[0])/d, uy = (B[1]-A[1])/d;
+  const p1 = [A[0] + ux*x - uy*h, A[1] + uy*x + ux*h], p2 = [A[0] + ux*x + uy*h, A[1] + uy*x - ux*h];
+  return p1[1] < p2[1] ? p1 : p2;
+}
+
+/* Rigid straight body (plank line) from a planted toe or ankle. al = direction
+   from the feet toward the head. Returns params for the hip, torso and legs. */
+function plankFromToe(toe, al, face){
+  const fd = al + 90*face, ank = add(toe, fd, -BONE.ft);
+  return plankFromAnkle(ank, al, fd);
+}
+function plankFromAnkle(ank, al, fd){
+  const H = add(ank, al, LEG);
+  return {hx:H[0], hy:H[1], t:al, 'lN.u':al+180, 'lN.l':al+180, 'lF.u':al+180, 'lF.l':al+180, 'lN.f':fd, 'lF.f':fd};
+}
+const shoulderOf = p => add([p.hx, p.hy], p.t, BONE.torso);
+// body line from a kneeling knee: knee on the floor, hip and shoulders in line with it
+function plankFromKnee(K, al, shin){
+  const H = add(K, al, BONE.th);
+  return {hx:H[0], hy:H[1], t:al, 'lN.u':al+180, 'lN.l':shin, 'lF.u':al+180, 'lF.l':shin};
+}
+// find the body angle that puts the shoulder at height y (pivoting on the feet)
+const alForShoulderY = (mk, y, lo, hi) => solve(al => shoulderOf(mk(al))[1] - y, lo, hi);
+const alForReach = (mk, P, d, lo, hi) => solve(al => dist(shoulderOf(mk(al)), P) - d, lo, hi);
+
+// ---- key-pose helpers ----
+const L = (id, u, l) => ({[id+'.u']:u, [id+'.l']:l===undefined ? u : l});         // limb by angles
+const T = (id, x, y, extra) => Object.assign({[id+'.x']:x, [id+'.y']:y}, extra);  // limb end target
+const K = (at, ...o) => Object.assign({}, ...o, {_t:at});                           // key pose at phase `at`
+const both = (u, l) => Object.assign(L('aN', u, l), L('aF', u, l));
+const legsTo = (xN, yN, xF, yF) => Object.assign(T('lN', xN, yN), T('lF', xF, yF));
+const toeAt = (id, x, y, f) => ({[id+'.tx']:x, [id+'.ty']:y, [id+'.f']:f});    // foot placed by its toe
+const EASE = {
+  io: k => 0.5 - 0.5*Math.cos(Math.PI*k),
+  lin: k => k,
+  out: k => Math.sin(k*Math.PI/2),
+  in: k => 1 - Math.cos(k*Math.PI/2),
+};
+
+/* Every key holds the full parameter set (missing values are carried
+   forward from the previous key), so interpolation is a plain lerp. */
+function prepKeys(def){
+  if(def._keys || !def.keys) return;
+  const names = new Set(); def.keys.forEach(k => Object.keys(k).forEach(n => n!=='_t' && n!=='e' && names.add(n)));
+  let prev = {};
+  const filled = def.keys.map(k => (prev = Object.assign({}, prev, k)));
+  // anything a later key introduces is back-filled into the earlier keys
+  for(let i=filled.length-2;i>=0;i--) names.forEach(n => { if(filled[i][n]===undefined) filled[i][n] = filled[i+1][n]; });
+  def._keys = filled;
+}
+function sample(def, ph){
+  if(def.proc) return def.proc(ph);
+  prepKeys(def);
+  const ks = def._keys, n = ks.length;
+  let i = n-1;
+  for(let j=0;j<n;j++){ if(ks[j]._t > ph){ i = j-1; break; } }
+  if(i<0) i = n-1;
+  const a = ks[i], b = ks[(i+1)%n];
+  const t1 = i===n-1 ? 1 + ks[0]._t : b._t;
+  const span = t1 - a._t;
+  const k = span>0 ? (EASE[a.e||'io'])(clamp((ph - a._t)/span, 0, 1)) : 0;
+  const p = {};
+  for(const name in a){ if(name==='_t'||name==='e') continue;
+    const va = a[name], vb = b[name];
+    p[name] = (typeof va==='number' && typeof vb==='number') ? lerp(va, vb, k) : va;
+  }
+  return p;
+}
+
+function solveLimb(p, id, root, a, b, s, view){
+  const g = k => p[id+'.'+k];
+  if(g('pts')) return {pts:g('pts'), proj:true};
+  const kk = g('k')===undefined ? 1 : g('k');
+  a *= kk; b *= kk;
+  if(g('tx')!==undefined){ const an = add([g('tx'), g('ty')], g('f'), -BONE.ft); p[id+'.x'] = an[0]; p[id+'.y'] = an[1]; }
+  const tx = g('x');
+  if(tx!==undefined && (g('str') || ((view==='front'||view==='top') && id[0]==='l'))){
+    // out-of-plane limb: drawn straight to its target (foreshortened)
+    const T2 = [tx, g('y')], d = Math.min(dist(root, T2), a+b), an = ang(root, T2);
+    const m = add(root, an, d*a/(a+b));
+    return {pts:[root, m, add(root, an, d)], u:an, l:an, T:T2, proj:true};
+  }
+  let u = g('u'), l = g('l');
+  let T2 = null;
+  if(tx!==undefined){
+    T2 = [tx, g('y')];
+    const w = g('w')===undefined ? 1 : g('w');
+    const sg = g('s')===undefined ? s : g('s');
+    const [iu, il] = ikAngles(root, T2, a, b, sg);
+    if(u===undefined || w>=1){ u = iu; l = il; }
+    else if(w>0){ u = lerpAng(u, iu, w); l = lerpAng(l, il, w); }
+    if(w<1) T2 = null;   // only a fully weighted target is a contact
+  }
+  if(l===undefined) l = u;
+  const m = add(root, u, a), e = add(m, l, b);
+  return {pts:[root, m, e], u, l, T:T2, proj:kk<1};
+}
+
+function pose(def, ph){
+  let p = sample(def, ph);
+  if(def.pre) p = def.pre(p, ph) || p;
+  const face = def.face===undefined ? 1 : def.face, view = def.view || 'side';
+  const sg = Object.assign({aN:face, aF:face, lN:-face, lF:-face}, def.sgn);
+  const H = [p.hx, p.hy], S = add(H, p.t, BONE.torso);
+  const head = add(S, p.t + (p.n||0), BONE.neck);
+  let rN = S, rF = S;
+  if(p.sx || p.sy) rN = rF = [S[0]+(p.sx||0), S[1]+(p.sy||0)];
+  if(def.bar){ rN = add(S, p.bt||0, def.bar/2); rF = add(S, p.bt||0, -def.bar/2); }
+  const out = {H, S, head, c:p.c||0, cam:p.cam||0, face, view, p, rN, rF, limbs:{}};
+  out.limbs.aN = solveLimb(p, 'aN', rN, BONE.ua, BONE.fa, sg.aN, view);
+  out.limbs.aF = solveLimb(p, 'aF', rF, BONE.ua, BONE.fa, sg.aF, view);
+  out.limbs.lN = solveLimb(p, 'lN', H, BONE.th, BONE.sh, sg.lN, view);
+  out.limbs.lF = solveLimb(p, 'lF', H, BONE.th, BONE.sh, sg.lF, view);
+  ['lN','lF'].forEach(id => {
+    const lb = out.limbs[id];
+    if(view!=='side' || def.nofeet || lb.l===undefined) return;
+    const f = p[id+'.f']!==undefined ? p[id+'.f'] : lb.l - 90*face;   // default: neutral ankle
+    lb.f = f; lb.toe = add(lb.pts[2], f, BONE.ft);
+  });
+  return out;
+}
+
+/* ---- move library: one entry per animation type ----
+   dur: seconds per loop · still: phase shown when motion is reduced
+   vb: viewBox when a pose needs more room · props: static scenery */
+const SIDE_HANG = both(96, 84);           // arms hanging, elbows soft
+const standLegs = (x, xF) => legsTo(x, G, xF===undefined ? x : xF, G);
+const FLAT = {'lN.f':0, 'lF.f':0};
+const pushupDef = (o) => {
+  // Rigid plank pivoting on the toes; hands planted, elbows track back toward the feet.
+  const toe = [o.toe, G], mk = al => plankFromToe(toe, al, -1);
+  const alTop = alForShoulderY(mk, G - o.top, 181, 230);
+  const handX = shoulderOf(mk(alTop))[0] + (o.hand||0);
+  const alBot = alForShoulderY(mk, G - o.bottom, 175, alTop);
+  const hands = Object.assign(T('aN', handX, G), T('aF', handX, G));
+  return {face:-1, dur:o.dur||2.2, still:0.45, props:o.props, keys:[
+    K(0, {al:alTop}, hands), K(0.12, {al:alTop}), K(0.5, {al:alBot}), K(0.58, {al:alBot})],
+    pre:p => Object.assign(p, mk(p.al)),
+    pins:[['aN.end'],['aF.end'],['lN.toe']]};
+};
+const hold = (def) => Object.assign({still:0}, def);
+
+const MOVES = {
+  /* ---------- warm-up ---------- */
+  // Big forward arm circles, straight arms. Behind the body the arm swings out
+  // to the side (circumduction), so that half of the circle is foreshortened.
+  armcircle:{dur:2.6, still:0.3, keys:[K(0,{e:'lin', a:0}), K(0.999,{a:360})],
+    pre:p => {
+      const th = 90 - p.a, k = p.a<=180 ? 1 : 1 - 0.45*Math.sin((p.a-180)*D2R);
+      return Object.assign(p, {hx:50, hy:STAND, t:-90}, standLegs(50), FLAT, both(th, th), {'aN.k':k, 'aF.k':k});
+    }},
+  // Backward shoulder rolls: the shoulder girdle traces a small circle
+  // (up, back, down) while the arms hang relaxed.
+  shoulderroll:{dur:1.8, still:0.25, keys:[K(0,{e:'lin', a:0}), K(0.999,{a:360})],
+    pre:p => Object.assign(p, {hx:50, hy:STAND, t:-90, sx:2.4*Math.cos(-p.a*D2R) , sy:2.4*Math.sin(-p.a*D2R)}, standLegs(50), FLAT, SIDE_HANG)},
+  march:{dur:1.3, still:0.25, keys:[
+      K(0, {lN:0, lF:0}, L('aN',90,78), L('aF',90,78)), K(0.25, {lN:1}, L('aN',112,92), L('aF',68,48)),
+      K(0.5, {lN:0, lF:0}, L('aN',90,78), L('aF',90,78)), K(0.75, {lF:1}, L('aN',68,48), L('aF',112,92))],
+    pre:p => swingLegs(Object.assign(p, {hx:50, hy:STAND, t:-90}), 50, {u:42, l:100, f:28})},
+  highkneeseasy:{dur:1.0, still:0.25, keys:[
+      K(0, {lN:0, lF:0, b:0}, L('aN',90,20), L('aF',90,20)), K(0.25, {lN:1, b:1}, L('aN',125,50), L('aF',62,-22)),
+      K(0.5, {lN:0, lF:0, b:0}, L('aN',90,20), L('aF',90,20)), K(0.75, {lF:1, b:1}, L('aN',62,-22), L('aF',125,50))],
+    pre:p => swingLegs(Object.assign(p, {hx:50, hy:STAND-1-1.5*p.b, t:-87}), 50, {u:22, l:110, f:40}, 25)},
+  highknees:{dur:0.62, still:0.25, keys:[
+      K(0, {lN:0, lF:0, b:0}, L('aN',90,5), L('aF',90,5)), K(0.25, {lN:1, b:1}, L('aN',130,45), L('aF',55,-30)),
+      K(0.5, {lN:0, lF:0, b:0}, L('aN',90,5), L('aF',90,5)), K(0.75, {lF:1, b:1}, L('aN',55,-30), L('aF',130,45))],
+    pre:p => swingLegs(Object.assign(p, {hx:50, hy:STAND-2.6-1.5*p.b, t:-84}), 50, {u:2, l:100, f:55}, 32)},
+  // Front view. Jumping jack: feet and arms open together, land soft, close.
+  jumpingjack:{view:'front', face:0, dur:0.9, still:0.5, keys:[
+      K(0, {hy:STAND+2, w:3, lift:0}, L('aN',82), L('aF',98)),
+      K(0.14, {hy:STAND, w:3, lift:1.5}),
+      K(0.3, {hy:STAND-3, w:9, lift:3}, L('aN',2), L('aF',178)),
+      K(0.48, {hy:G-Math.sqrt(LEG*LEG-15*15)+1.5, w:15, lift:0}, L('aN',-78), L('aF',258)),
+      K(0.62, {hy:G-Math.sqrt(LEG*LEG-15*15), w:15, lift:1.5}),
+      K(0.8, {hy:STAND-3, w:9, lift:3}, L('aN',2), L('aF',178))],
+    pre:p => Object.assign(p, {hx:50, t:-90}, legsTo(50+p.w, G-p.lift, 50-p.w, G-p.lift))},
+  // Star jump: dip into a quarter squat, explode up into an X in the air,
+  // bring everything back in and land feet together, soft.
+  starjump:{view:'front', face:0, dur:1.5, still:0.42, keys:[
+      K(0, {hy:STAND, w:3, lift:0}, L('aN',82), L('aF',98)),
+      K(0.22, {hy:STAND+7, w:4, lift:0}, L('aN',100), L('aF',80)),
+      K(0.36, {hy:STAND-1, w:4, lift:3}, L('aN',20), L('aF',160)),
+      K(0.47, {hy:STAND-12, w:14, lift:14}, L('aN',-38), L('aF',218)),
+      K(0.6, {hy:STAND-5, w:5, lift:5}, L('aN',60), L('aF',120)),
+      K(0.7, {hy:STAND+6, w:4, lift:0}, L('aN',82), L('aF',98)),
+      K(0.85, {hy:STAND, w:3, lift:0})],
+    pre:p => Object.assign(p, {hx:50, t:-90}, legsTo(50+p.w, G-p.lift, 50-p.w, G-p.lift))},
+  // Hip circles, front view: hips trace the circle (seen as a side-to-side
+  // sway), feet planted, upper body counter-balances, hands on hips.
+  hipcircle:{view:'front', face:0, dur:3.2, still:0, sgn:{aN:-1, aF:1}, keys:[K(0,{e:'lin', a:0}), K(0.999,{a:360})],
+    pre:p => {
+      const dx = 4.5*Math.cos(p.a*D2R), H = [50+dx, STAND+0.8+0.6*Math.sin(p.a*D2R)];
+      return Object.assign(p, {hx:H[0], hy:H[1], t:-90-9*Math.cos(p.a*D2R)}, legsTo(56, G, 44, G),
+        T('aN', H[0]+6, H[1]-2), T('aF', H[0]-6, H[1]-2));
+    }},
+  // Cat-cow on all fours (head left): hands and knees stay planted, only the
+  // spine moves — rounded up with the head dropped, then dipped with the head up.
+  catcow:Object.assign(quadDef(30), {dur:5, still:0.25, keys:[
+      K(0, {c:0, n:0}), K(0.25, {c:-6, n:-38}), K(0.4, {c:-6, n:-38}), K(0.75, {c:4.5, n:22}), K(0.9, {c:4.5, n:22})]}),
+  // Bird dog: reach the opposite arm and leg out long, level with the back,
+  // hold, return; then the other pair. Hips and shoulders stay put.
+  birddog:Object.assign(quadDef(34), {dur:5, still:0.25, keys:[
+      K(0, {wN:1, wF:1, lnU:0, lfU:0}, L('aN',182), L('aF',182), L('lN',-4), L('lF',-4)),
+      K(0.18, {wN:0, lfU:1}), K(0.36, {wN:0, lfU:1}), K(0.5, {wN:1, lfU:0}),
+      K(0.68, {wF:0, lnU:1}), K(0.86, {wF:0, lnU:1})],
+    pre:p => quadPre(p, 34), pins:[]}),
+
+  /* ---------- push ---------- */
+  pushup:pushupDef({toe:84, top:29.5, bottom:9.5}),
+  // Hands together under the lower chest: elbows travel straight back along the ribs.
+  diamondpushup:pushupDef({toe:84, top:29.2, bottom:9, hand:7}),
+  // Hands down by the hips, shoulders leaned forward well past the hands.
+  ppushup:pushupDef({toe:86, top:27, bottom:10.5, hand:13, dur:2.6}),
+  // Incline: hands on a couch/table edge, the rigid plank pivots on the toes.
+  inclinepushup:(() => {
+    const P = [22, 66];
+    const top = tx => { const mk = al => plankFromToe([tx, G], al, -1), al = alForReach(mk, P, ARM-0.6, 186, 250); return {mk, al}; };
+    const tx = solve(x => { const {mk, al} = top(x); return wrap(ang(shoulderOf(mk(al)), P) - al) + 90; }, 70, 96);
+    const {mk, al:alTop} = top(tx), alBot = alForShoulderY(mk, P[1]-8.5, 181, alTop);
+    return {face:-1, dur:2.2, still:0.45, ext:[4, 28, 68],
+      props:'<path class="bar" d="M4 68.5H28M6 68.5V90M26 68.5V90"/>',
+      keys:[K(0, {al:alTop}, T('aN',...P), T('aF',...P)), K(0.12, {al:alTop}), K(0.5, {al:alBot}), K(0.58, {al:alBot})],
+      pre:p => Object.assign(p, mk(p.al)), pins:[['aN.end'],['lN.toe']]};
+  })(),
+  // Knee push-up: knees are the pivot, shins raised behind, straight line knee-to-head.
+  kneepushup:(() => {
+    const Kn = [64, G], mk = al => plankFromKnee(Kn, al, -24);
+    const alTop = alForShoulderY(mk, G-29.5, 181, 240), hx = shoulderOf(mk(alTop))[0];
+    const alBot = alForShoulderY(mk, G-9.5, 176, alTop);
+    return {face:-1, dur:2.2, still:0.45, keys:[
+        K(0, {al:alTop}, T('aN',hx,G), T('aF',hx,G)), K(0.12, {al:alTop}), K(0.5, {al:alBot}), K(0.58, {al:alBot})],
+      pre:p => Object.assign(p, mk(p.al)), pins:[['aN.end'],['lN.knee']]};
+  })(),
+  // Archer push-up, seen head-on (the only view where the side-to-side shift
+  // shows): wide hands, the body lowers toward one hand while the other arm
+  // stays long and straight; alternate sides.
+  archerpushup:{view:'head', face:0, bar:16, dur:4.2, still:0.3, sgn:{aN:-1, aF:1},
+    keys:[K(0, {cx:50, cy:62.5, bt:0}), K(0.08, {cx:50, cy:62.5, bt:0}), K(0.3, {cx:41.5, cy:74, bt:-11}), K(0.36, {cx:41.5, cy:74, bt:-11}),
+      K(0.5, {cx:50, cy:62.5, bt:0}), K(0.58, {cx:50, cy:62.5, bt:0}), K(0.8, {cx:58.5, cy:74, bt:11}), K(0.86, {cx:58.5, cy:74, bt:11})],
+    pre:p => Object.assign(p, {hx:p.cx, hy:p.cy+BONE.torso, t:-90, n:180-p.bt*0.6, 'lN.pts':[[p.cx, p.cy], [p.cx, p.cy], [p.cx, p.cy]],
+        'lF.pts':[[p.cx, p.cy], [lerp(p.cx, 50, 0.5), lerp(p.cy, G-12, 0.5)], [50, G-12]]},
+      T('aN', 73, G), T('aF', 27, G)),
+    pins:[['aN.end'],['aF.end']]},
+  // Pike push-up: hands and feet fixed, hips stay high; the head lowers to a
+  // spot just in front of the hands (a tripod), elbows bend back toward the feet.
+  pike:(() => {
+    const P = [32, G], toe = [71, G], fd = 124, A = add(toe, fd, -BONE.ft);
+    const Htop = meetUp(P, BONE.torso+ARM-0.6, A, LEG-0.4), Stop = add(P, ang(P, Htop), ARM-0.6);
+    const Sbot = [28, 71.5];
+    return {face:-1, dur:2.4, still:0.45, keys:[
+        K(0, {k:0}), K(0.12, {k:0}), K(0.5, {k:1}), K(0.58, {k:1})],
+      pre:p => {
+        const S = [lerp(Stop[0], Sbot[0], p.k), lerp(Stop[1], Sbot[1], p.k)];
+        const H = meetUp(S, BONE.torso, A, LEG-0.4);
+        const t = ang(H, S);
+        return Object.assign(p, {hx:H[0], hy:H[1], t, n:lerp(0, -10, p.k), 'lN.f':fd, 'lF.f':fd},
+          T('aN', ...P), T('aF', ...P), legsTo(...A, ...A));
+      }, pins:[['aN.end'],['lN.toe']]};
+  })(),
+
+  /* ---------- legs ---------- */
+  // Squat (side view): feet flat, hips sit back and down to thighs ~parallel,
+  // knees travel forward over the toes, torso leans to keep balance over
+  // mid-foot, arms reach forward as a counterweight.
+  squat:{dur:2.6, still:0.45, keys:[
+      K(0, {hx:49, hy:STAND, t:-90, n:0}, SIDE_HANG), K(0.08, {}),
+      K(0.45, {hx:39, hy:71, t:-48, n:-18}, both(-4, -4)), K(0.55, {}),
+      K(0.92, {hx:49, hy:STAND, t:-90, n:0}, SIDE_HANG)],
+    pre:p => Object.assign(p, standLegs(48), FLAT), pins:[['lN.end'],['lN.toe']]},
+  // Jump squat: squat, drive through the whole foot into a jump (hips, knees,
+  // ankles extend, toes leave last), land toes-first and sink back into the squat.
+  jumpsquat:{dur:1.7, still:0.3, keys:[
+      K(0, {hx:39, hy:71, t:-48, n:-18, ax:48, ay:G, f:0}, both(118)),
+      K(0.18, {hx:47.5, hy:G-4.9-LEG+0.8, t:-84, n:-4, ax:50.6, ay:G-4.9, f:55}, both(-60, -70)),
+      K(0.33, {hx:48.5, hy:G-4.9-LEG-6, t:-88, n:0, ax:51, ay:G-11, f:60}, both(-75, -80)),
+      K(0.48, {hx:47.5, hy:G-4.9-LEG+1, t:-86, n:-4, ax:50.6, ay:G-4.9, f:55}, both(30, 10)),
+      K(0.7, {hx:39, hy:71, t:-48, n:-18, ax:48, ay:G, f:0}, both(-4)),
+      K(0.82, {}, both(118))],
+    pre:p => Object.assign(p, legsTo(p.ax, p.ay, p.ax, p.ay), {'lN.f':p.f, 'lF.f':p.f})},
+  calfraise:{dur:2.2, still:0.4, keys:[
+      K(0, {f:0}), K(0.08, {f:0}), K(0.32, {f:42}), K(0.5, {f:42}), K(0.95, {f:0})],
+    pre:p => {
+      const toe = [54, G], A = add(toe, p.f, -BONE.ft);
+      return Object.assign(p, {hx:A[0]-1, hy:A[1]-LEG+0.5, t:-90}, legsTo(...A, ...A), {'lN.f':p.f, 'lF.f':p.f}, SIDE_HANG);
+    }, pins:[['lN.toe']]},
+  // Reverse lunge: the front (near) foot never moves. The back foot steps
+  // back onto the ball of the foot, the back knee drops toward the floor
+  // under the hip, front shin stays roughly vertical, torso tall.
+  lunge:{dur:3.2, still:0.5, keys:[
+      K(0, {hx:55, hy:STAND, t:-90, bx:62, by:G, bf:0}, SIDE_HANG),
+      K(0.13, {hx:51, hy:STAND+1, bx:47, by:G-5, bf:30}),
+      K(0.26, {hx:45, hy:STAND+3, bx:26, by:G, bf:75}),
+      K(0.5, {hx:40.5, hy:G-21, t:-85}, L('aN',100,86), L('aF',100,86)), K(0.6, {}),
+      K(0.78, {hx:47, hy:STAND+2, t:-89, bx:26, by:G, bf:75}, SIDE_HANG),
+      K(0.9, {hx:53, hy:STAND, bx:46, by:G-5, bf:30}),
+      K(0.97, {hx:55, hy:STAND, bx:62, by:G, bf:0})],
+    pre:p => Object.assign(p, T('lN', 56, G), {'lN.f':0}, toeAt('lF', p.bx, p.by, p.bf)),
+    pins:[['lN.end'],['lN.toe'],['lF.toe',0.26,0.78]]},
+  // Walking lunge: the back foot steps through into the next lunge. The camera
+  // follows the hips, so the floor marks scroll and planted feet move with them.
+  walklunge:walkLungeDef(),
+  // Jump lunge: from a lunge, jump, switch legs in the air, land soft in the
+  // opposite lunge; then switch back.
+  jumplunge:jumpLungeDef(),
+  // Bulgarian split squat: rear foot laces-down on a chair seat behind, the
+  // hips drop almost straight down, back knee toward the floor.
+  bulgariansplit:{dur:2.8, still:0.45,
+    props:'<path class="bar" d="M4 70.5H27M6 70.5V90M25 70.5V90M5 70.5V48"/>', ext:[4, 27, 48],
+    keys:[K(0, {hx:51, hy:53.2, t:-87}), K(0.1, {}), K(0.45, {hx:46.5, hy:69, t:-78}), K(0.55, {}), K(0.95, {hx:51, hy:53.2, t:-87})],
+    pre:p => Object.assign(p, T('lN', 66, G), T('lF', 22, 67.5), {'lN.f':0, 'lF.f':180}, L('aN',98,86), L('aF',98,86)),
+    pins:[['lN.end'],['lF.end']]},
+  // Assisted pistol: stand on one leg, the other held straight out in front;
+  // sit down and back on the standing leg (heel down), torso leaning forward
+  // for balance, one hand sliding down a doorframe, the other reaching forward.
+  pistol:{dur:3.2, still:0.45,
+    props:'<path class="bar" d="M58 6V90"/>', ext:[58, 58, 6],
+    keys:[K(0, {hx:47, hy:STAND, t:-89, e2:56, hand:44}, L('aF',30,10)), K(0.08, {}),
+      K(0.45, {hx:37.5, hy:72.5, t:-43, e2:-4, hand:74}, L('aF',-6,-8)), K(0.55, {}),
+      K(0.95, {hx:47, hy:STAND, t:-89, e2:56, hand:44}, L('aF',30,10))],
+    pre:p => Object.assign(p, T('lN', 48, G), {'lN.f':0}, L('lF', p.e2, p.e2), T('aN', 57, p.hand)),
+    pins:[['lN.end'],['lN.toe']]},
+  glutebridge:bridgeDef(false),
+  glutemarch:bridgeDef(true),
+
+  /* ---------- core ---------- */
+  // Dead bug: back flat on the floor the whole time; opposite arm and leg
+  // lower toward the floor and return, then the other pair.
+  deadbug:{face:1, dur:4.4, still:0.25,
+    keys:[K(0, {aN:0, aF:0, lN:0, lF:0}), K(0.25, {aN:1, lF:1}), K(0.32, {}), K(0.5, {aN:0, lF:0}),
+      K(0.75, {aF:1, lN:1}), K(0.82, {})],
+    pre:p => {
+      return Object.assign(p, {hx:57, hy:G, t:180, n:26},
+        L('aN', lerp(-90, -168, p.aN)), L('aF', lerp(-90, -168, p.aF)),
+        L('lN', lerp(-90, -8, p.lN), lerp(0, -8, p.lN)), L('lF', lerp(-90, -8, p.lF), lerp(0, -8, p.lF)),
+        {'lN.f':lerp(-60, -88, p.lN), 'lF.f':lerp(-60, -88, p.lF)});
+    }},
+  // Forearm plank: elbows under shoulders, forearms flat, one straight line
+  // from heels to head. A hold, so only a breath of movement.
+  plank:forearmPlankDef(false),
+  kneeplank:forearmPlankDef(true),
+  // Bicycle crunch: shoulders curled off the floor, hands behind the head,
+  // legs pedal (one knee in, the other leg long and hovering), low back down.
+  crunch:{face:1, dur:2.2, still:0.25, sgn:{aN:1, aF:1},
+    keys:[K(0, {a:0, r:0}), K(0.25, {a:1, r:1}), K(0.5, {a:0, r:0}), K(0.75, {a:-1, r:1})],
+    pre:p => {
+      const H = [56, G], t = 202 + 4*p.r, S = add(H, t, BONE.torso), hd = add(S, t, BONE.neck), hand = add(hd, t-90, 4.5);
+      const a = (1+p.a)/2;  // 0..1: which knee is in
+      const lnU = lerp(-40, -108, a), lnL = lerp(-40, -14, a), lfU = lerp(-108, -40, a), lfL = lerp(-14, -40, a);
+      return Object.assign(p, {hx:H[0], hy:H[1], t, c:2}, T('aN', ...hand), T('aF', ...hand),
+        L('lN', lnU, lnL), L('lF', lfU, lfL), {'lN.f':lnL-60, 'lF.f':lfL-60});
+    }},
+  // Mountain climbers: shoulders stacked over the hands, hips level with the
+  // shoulders; one knee drives under the chest while the other leg stays long.
+  mountainclimber:(() => {
+    const toe = [86, G], mk = al => plankFromToe(toe, al, -1);
+    const al = alForShoulderY(mk, G-29.5, 181, 230), base = mk(al), S = shoulderOf(base);
+    const H = [base.hx, base.hy];
+    const plantA = add(toe, base['lN.f'], -BONE.ft);
+    const tuck = (() => { const kn = add(H, 104, BONE.th); return add(kn, 2, BONE.sh); })();
+    return {face:-1, dur:0.95, still:0.25, keys:[
+        K(0, {n:0, f:0}), K(0.25, {n:1, f:0}), K(0.5, {n:0, f:0}), K(0.75, {n:0, f:1})],
+      pre:p => {
+        const at = k => [lerp(plantA[0], tuck[0], k), lerp(plantA[1], tuck[1], k) - 9*Math.sin(Math.PI*k)];
+        const ft = k => lerp(base['lN.f'], 5, k);
+        const r = {hx:H[0], hy:H[1], t:ang(H, S), n:0};
+        return Object.assign(p, r, T('aN', S[0], G), T('aF', S[0], G), T('lN', ...at(p.n)), T('lF', ...at(p.f)), {'lN.f':ft(p.n), 'lF.f':ft(p.f)});
+      }, pins:[['aN.end']]};
+  })(),
+  // Side plank on the forearm, viewed from the front: elbow under the
+  // shoulder, feet stacked, a straight line from feet to head; top arm up.
+  sideplank:(() => {
+    const E = [24, G], S = [24, G-BONE.ua+0.5], A = [24 + Math.sqrt((LEG+BONE.torso)**2 - (G-S[1])**2), G];
+    const al = ang(A, S), H = add(A, al, LEG);
+    return {face:0, view:'front', nofeet:true, dur:4, still:0, keys:[K(0,{b:0}), K(0.5,{b:1})],
+      pre:p => Object.assign(p, {hx:H[0], hy:H[1]-0.8*p.b, t:ang([H[0], H[1]-0.8*p.b], S), n:-6},
+        legsTo(...A, ...A), {'aF.pts':[S, E, [E[0]-1.5, E[1]]]}, L('aN', -88)), pins:[['lN.end']]};
+  })(),
+  // Hollow body hold: low back pressed down, shoulders and straight legs
+  // lifted, arms long beside the ears — a shallow banana shape.
+  hollow:{face:1, dur:4, still:0, keys:[K(0, {b:0}), K(0.5, {b:1})],
+    pre:p => Object.assign(p, {hx:56, hy:G-0.5, t:196+0.8*p.b, c:1.5, n:4}, L('aN',193), L('aF',193),
+      L('lN', -16-0.8*p.b), L('lF', -16-0.8*p.b), {'lN.f':-30, 'lF.f':-30})},
+  // V-up: from lying long, lift straight legs and torso together, balance on
+  // the hips and reach the hands to the shins; lower under control.
+  vup:{face:1, dur:2.8, still:0.38, keys:[
+      K(0, {t:180, lg:0, ar:180, n:26, c:0}), K(0.08, {}), K(0.38, {t:235, lg:-58, ar:351, n:-4, c:2}), K(0.48, {}),
+      K(0.88, {t:180, lg:0, ar:180, n:26, c:0})],
+    pre:p => Object.assign(p, {hx:52, hy:G}, L('lN', p.lg), L('lF', p.lg), L('aN', p.ar), L('aF', p.ar), {'lN.f':p.lg-20, 'lF.f':p.lg-20})},
+
+  /* ---------- pull ---------- */
+  // Superman: hips on the floor; arms, chest and straight legs lift together,
+  // neck long (eyes to the floor), hold, lower slowly.
+  superman:{face:-1, dur:3.4, still:0.4, keys:[
+      K(0, {t:180, lg:0, ar:180, n:26}), K(0.08, {}), K(0.32, {t:192, lg:-9, ar:198, n:6}), K(0.62, {}), K(0.95, {t:180, lg:0, ar:180, n:26})],
+    pre:p => Object.assign(p, {hx:58, hy:G}, L('lN', p.lg), L('lF', p.lg), L('aN', p.ar), L('aF', p.ar), {'lN.f':p.lg, 'lF.f':p.lg})},
+  // Reverse snow angel, seen from above (the sweep happens along the floor):
+  // straight arms hover and sweep from the hips out and up overhead and back.
+  snowangel:{view:'top', face:0, bar:12, dur:3.8, still:0.45,
+    props:'<rect class="mat" x="22" y="4" width="56" height="94" rx="6"/>',
+    keys:[K(0, {a:0}), K(0.08, {}), K(0.45, {a:1}), K(0.58, {}), K(0.95, {a:0})],
+    pre:p => Object.assign(p, {hx:50, hy:56, t:-90, n:0}, L('aN', lerp(84, -55, p.a)), L('aF', lerp(96, 235, p.a)), legsTo(52.5, 93, 47.5, 93))},
+  // Prone Y-raise: chest and legs stay down, arms (out in a Y, so slightly
+  // foreshortened from the side) lift off the floor and lower.
+  yraise:{face:-1, dur:3, still:0.4, keys:[
+      K(0, {ar:180}), K(0.08, {}), K(0.35, {ar:196}), K(0.6, {}), K(0.92, {ar:180})],
+    pre:p => Object.assign(p, {hx:58, hy:G, t:181, n:24}, L('aN', p.ar), L('aF', p.ar), {'aN.k':0.86, 'aF.k':0.86}, L('lN', 0), L('lF', 0), {'lN.f':0, 'lF.f':0})},
+  // Towel row: heels planted, body one straight line leaning back from the
+  // ankles; the towel's length is fixed, so pulling brings the whole body up
+  // toward the post. Elbows drive back close to the ribs.
+  row:towelRowDef(),
+  tablerow:tableRowDef(false),
+  archertablerow:tableRowDef(true),
+  // Scapular squeeze: arms by the sides, shoulder blades pull back and down
+  // and hold; chest lifts slightly.
+  scapsqueeze:{dur:4, still:0.5, keys:[
+      K(0, {s:0}), K(0.25, {s:1}), K(0.78, {s:1})],
+    pre:p => Object.assign(p, {hx:50, hy:STAND, t:-90-1.5*p.s, n:1.5*p.s, sx:-2.6*p.s, sy:0.6*p.s}, standLegs(50), FLAT,
+      both(96+6*p.s, 84+4*p.s))},
+
+  /* ---------- full body ---------- */
+  burpeestep:burpeeDef('step'),
+  halfburpee:burpeeDef('half'),
+  burpee:burpeeDef('full'),
+  burpeetuck:burpeeDef('tuck'),
+  // Bear crawl hold: hands under shoulders, knees under hips hovering just
+  // off the floor, back flat.
+  bearhold:Object.assign(bearDef(), {dur:4, still:0}),
+  bearcrawl:Object.assign(bearDef(), {dur:1.6, still:0.1, crawl:true}),
+
+  /* ---------- mobility / stretch ---------- */
+  // World's greatest stretch: deep lunge, back knee down, both hands inside
+  // the front foot; then rotate and reach one arm to the ceiling, eyes follow.
+  kneelrotate:(() => {
+    const Kn = [28, G], F = [66, G], hand = [59, G];
+    return {dur:6, still:0.4, keys:[K(0, {r:0}), K(0.12, {}), K(0.38, {r:1}), K(0.62, {}), K(0.88, {r:0})],
+      pre:p => {
+        const H = add(Kn, -52, BONE.th), t = -32 - 6*p.r, S = add(H, t, BONE.torso);
+        // the arm turns about the spine toward the ceiling: in this view it
+        // swings through pointing at the viewer (foreshortened) to straight up
+        const c = Math.cos(Math.PI*p.r), v0 = [hand[0]-S[0], hand[1]-S[1]];
+        const e = [S[0] + lerp(v0[0], 0, p.r)*Math.abs(c) + 2*Math.sin(Math.PI*p.r), S[1] + (c>=0 ? v0[1]*c : (ARM-0.5)*c)];
+        const m = [lerp(S[0], e[0], BONE.ua/ARM), lerp(S[1], e[1], BONE.ua/ARM)];
+        return Object.assign(p, {hx:H[0], hy:H[1], t, n:-38*p.r}, T('lN', ...F), {'lN.f':0}, L('lF', 128, 180), {'lF.f':180},
+          T('aF', ...hand), {'aN.pts':[S, m, e]});
+      }, pins:[['lN.end'],['aF.end'],['lF.knee']]};
+  })(),
+  quadreach:Object.assign(quadDef(30), {dur:4.4, still:0.55, keys:[K(0,{r:0}), K(0.1,{}), K(0.45,{r:1}), K(0.62,{}), K(0.95,{r:0})],
+    pre:p => {
+      quadPre(p, 30);
+      const S = shoulderOf(p), hd = add(S, p.t, BONE.neck);
+      // the elbow swings from under the chest to pointing at the ceiling — in
+      // the side view that is a vertical sweep, foreshortened through the middle
+      const ph = lerp(0, 180, p.r), E = [S[0] + 1.5, S[1] + 12*Math.cos(ph*D2R)];
+      p['aN.pts'] = [S, E, add(hd, p.t - 75, 3)];
+      p.n = -12*p.r;
+      return p;
+    }}),
+  // Standing forward fold: hips hinge back, knees soft, spine and neck relax
+  // so the head hangs, hands hang toward the shins/floor.
+  fold:{dur:6, still:0.45, keys:[K(0, {f:0}), K(0.1, {}), K(0.45, {f:1}), K(0.7, {}), K(0.95, {f:0})],
+    pre:p => Object.assign(p, {hx:lerp(50, 43, p.f), hy:lerp(STAND, STAND+1.6, p.f), t:lerp(-90, 38, p.f), c:lerp(0, -4, p.f), n:lerp(0, 30, p.f)},
+      standLegs(50), FLAT, L('aN', 96, 84), L('aF', 96, 84), T('aN', 59, 81, {'aN.w':p.f}), T('aF', 59, 81, {'aF.w':p.f})),
+    pins:[['lN.end'],['lN.toe']]},
+  // Standing hamstring stretch: front heel down, toes up, front leg straight;
+  // back knee bends, hips push back, chest hinges forward with a flat back.
+  hamstring:{dur:5, still:0.45, keys:[K(0, {f:0}), K(0.1, {}), K(0.45, {f:1}), K(0.7, {}), K(0.95, {f:0})],
+    pre:p => Object.assign(p, {hx:lerp(46, 44, p.f), hy:lerp(57, 58.5, p.f), t:lerp(-62, -40, p.f), n:lerp(-8, -12, p.f)},
+      T('lN', 69, G-1), T('lF', 43, G), {'lN.f':-58, 'lF.f':0}, T('aN', lerp(60, 62, p.f), lerp(64, 70, p.f)), T('aF', lerp(60, 62, p.f), lerp(64, 70, p.f))),
+    pins:[['lN.end'],['lF.end']]},
+  // Child's pose: hips back to the heels, chest resting on the thighs, arms
+  // long on the floor, forehead down. Only the breath moves.
+  childspose:(() => {
+    const Kn = [46, G];
+    return {face:-1, dur:4.5, still:0, keys:[K(0,{b:0}), K(0.45,{b:1})],
+      pre:p => {
+        const H = add(Kn, -28, BONE.th);
+        return Object.assign(p, {hx:H[0], hy:H[1], t:174-0.6*p.b, c:-0.8*p.b, n:-9}, L('lN', 152, 0), L('lF', 152, 0), {'lN.f':0, 'lF.f':0},
+          T('aN', 9, G), T('aF', 9, G));
+      }, pins:[['aN.end'],['lN.knee']]};
+  })(),
+  // Hip flexor stretch (half kneeling): back knee down, front foot flat with
+  // the knee over the ankle; tuck the pelvis and ease the hips forward.
+  kneelunge:(() => {
+    const Kn = [36, G];
+    return {dur:5, still:0.45, keys:[K(0,{h:0}), K(0.1,{}), K(0.4,{h:1}), K(0.7,{}), K(0.95,{h:0})],
+      pre:p => {
+        const th = lerp(-89, -73, p.h), H = add(Kn, th, BONE.th);
+        return Object.assign(p, {hx:H[0], hy:H[1], t:-90-2*p.h, n:0}, T('lN', 58, G), {'lN.f':0}, L('lF', th+180, 180), {'lF.f':180},
+          T('aN', H[0]+3, H[1]-3), T('aF', H[0]+3, H[1]-3));
+      }, pins:[['lN.end'],['lF.knee']]};
+  })(),
+  // Chest opener: hands clasped behind, straight arms lift back and away,
+  // chest lifts, shoulders down and back.
+  chestopener:{dur:4, still:0.45, keys:[K(0, {o:0}), K(0.1, {}), K(0.45, {o:1}), K(0.75, {}), K(0.95, {o:0})],
+    pre:p => Object.assign(p, {hx:50, hy:STAND, t:-90-3*p.o, c:-1*p.o, n:-2*p.o, sx:-1.4*p.o}, standLegs(50), FLAT,
+      both(lerp(116, 134, p.o), lerp(114, 132, p.o)))},
+  // Thread the needle: from all fours, one arm slides under the body along
+  // the floor (seen end-on, so short), that shoulder and the side of the
+  // head lower to the floor; hips stay over the knees.
+  quadthread:Object.assign(quadDef(30), {dur:5, still:0.45, keys:[K(0,{d:0}), K(0.1,{}), K(0.45,{d:1}), K(0.7,{}), K(0.95,{d:0})],
+    pre:p => {
+      quadPre(p, 30);
+      const H = [p.hx, p.hy], S0 = shoulderOf(p);
+      const t = lerpAng(p.t, ang(H, [S0[0]+3, G-10.5]), p.d);
+      const S = add(H, t, BONE.torso);
+      return Object.assign(p, {t, n:lerp(0, -12, p.d)}, T('aN', lerp(30, S[0]+5, p.d), G, {'aN.str':1}));
+    }, pins:[['aF.end'],['lN.knee']]}),
+  // Standing quad stretch: one ankle held behind, knees together (thigh
+  // vertical), hips pressed slightly forward, standing tall.
+  quadhold:{dur:4, still:0, keys:[K(0,{b:0}), K(0.5,{b:1})],
+    pre:p => {
+      const H = [50+0.5*p.b, STAND], th = 95+2*p.b, kn = add(H, th, BONE.th), an = add(kn, th+155, BONE.sh);
+      return Object.assign(p, {hx:H[0], hy:H[1], t:-90}, L('lN', th, th+155), {'lN.f':th+120}, T('lF', 50, G), {'lF.f':0},
+        T('aN', ...an), L('aF', 75, 60));
+    }, pins:[['lF.end']]},
+};
+
+/* ---- shared builders used above ---- */
+function swingLegs(p, x, lift, plantUp){
+  // stance foot planted (flat, or on the ball of the foot when plantUp is set);
+  // the swinging leg moves in joint space from its planted angles to the lifted ones
+  const pf = plantUp || 0, toe = [x + BONE.ft*Math.cos(0), G], A = plantUp ? add([x+4, G], pf, -BONE.ft) : [x, G];
+  ['lN','lF'].forEach(id => {
+    const k = p[id];
+    const [u0, l0] = ikAngles([p.hx, p.hy], A, BONE.th, BONE.sh, -1);
+    if(k<=0){ Object.assign(p, T(id, ...A), {[id+'.f']:pf}); return; }
+    Object.assign(p, L(id, lerpAng(u0, lift.u, k), lerpAng(l0, lift.l, k)), {[id+'.f']:lerp(pf, lift.f, k)});
+  });
+  return p;
+}
+function quadDef(sx){
+  return {face:-1, keys:[K(0,{})], pre:p => quadPre(p, sx), pins:[['lN.knee'],['lF.knee']]};
+}
+// all fours, head left: hands under the shoulders, knees under the hips,
+// shins and the tops of the feet flat on the floor behind
+function quadPre(p, sx){
+  const S = [sx, G - ARM + 0.6], Hy = G - BONE.th;
+  const H = [sx + Math.sqrt(BONE.torso**2 - (Hy - S[1])**2), Hy];
+  Object.assign(p, {hx:H[0], hy:H[1], t:ang(H, S)});
+  if(p.wN===undefined){ Object.assign(p, T('aN', sx, G), T('aF', sx, G), L('lN', 90, 0), L('lF', 90, 0), {'lN.f':0, 'lF.f':0}); return p; }
+  // bird dog: blend each limb between planted and reaching
+  Object.assign(p, T('aN', sx, G, {'aN.w':p.wN}), T('aF', sx, G, {'aF.w':p.wF}),
+    L('lN', lerp(90, -4, p.lnU), lerp(0, -4, p.lnU)), L('lF', lerp(90, -4, p.lfU), lerp(0, -4, p.lfU)),
+    {'lN.f':lerp(0, 86, p.lnU), 'lF.f':lerp(0, 86, p.lfU)});
+  return p;
+}
+function forearmPlankDef(knee){
+  // elbows directly under the shoulders, forearms along the floor toward the head
+  const mk = knee ? (al => plankFromKnee([66, G], al, -22)) : (al => plankFromToe([86, G], al, -1));
+  const al = alForShoulderY(mk, G - BONE.ua + 0.3, 180.5, 230), S = shoulderOf(mk(al)), hand = [S[0] - BONE.fa + 0.3, G];
+  return {face:-1, dur:4, still:0, keys:[K(0,{b:0}), K(0.5,{b:1})],
+    pre:p => Object.assign(p, mk(al + 0.35*p.b), T('aN', ...hand), T('aF', ...hand)),
+    pins:[['aN.end'],[knee ? 'lN.knee' : 'lN.toe']]};
+}
+function bridgeDef(march){
+  // supine, head left: shoulders and head stay down, feet flat; the hips
+  // lift until shoulders, hips and knees make one line
+  const S = [30, G], A = [71, G], head = [S[0]-8.06, HEAD_DOWN];
+  const up = -22, top = {u:up-90, l:up};   // marching knee: hip and knee at ~90°
+  const keys = march
+    ? [K(0, {h:1, mN:0, mF:0}), K(0.08, {}), K(0.25, {mN:1}), K(0.38, {}), K(0.5, {mN:0}), K(0.58, {}), K(0.75, {mF:1}), K(0.88, {})]
+    : [K(0, {h:0}), K(0.08, {}), K(0.4, {h:1}), K(0.6, {}), K(0.95, {h:0})];
+  return {face:1, dur:march ? 3.6 : 3, still:march ? 0.3 : 0.5, keys,
+    pre:p => {
+      const th = lerp(0, up, p.h), H = add(S, th, BONE.torso), t = ang(H, S);
+      Object.assign(p, {hx:H[0], hy:H[1], t, n:ang(S, head) - t}, L('aN', 0), L('aF', 0), {'lN.f':0, 'lF.f':0});
+      ['lN','lF'].forEach(id => {
+        const m = p['m'+id[1]] || 0;
+        Object.assign(p, L(id, top.u, top.l), T(id, ...A, {[id+'.w']:1-m}), {[id+'.f']:lerp(0, top.l-75, m)});
+      });
+      return p;
+    }, pins:[['aN.end']]};
+}
+function towelRowDef(){
+  // The towel's length is fixed, so the hands stay on a circle around the
+  // anchor. Pick the anchor height so arms are straight at the bottom lean
+  // and the hands reach the chest at a still-leaned-back top position.
+  const A = [70, G], mk = al => plankFromAnkle(A, al, 0), alBot = -123, alTop = -104;
+  const Sb = shoulderOf(mk(alBot)), St = shoulderOf(mk(alTop));
+  const qy = solve(y => dist(Sb, [90, y]) - dist(St, [90, y]) - (ARM - 0.5 - 9), 10, 70), Q = [90, qy];
+  const Lt = dist(Sb, Q) - (ARM - 0.5);
+  return {face:1, dur:2.6, still:0.45, dyn:'towel', anchor:Q,
+    props:'<path class="bar" d="M92 8V90"/>', ext:[92, 92, 8],
+    keys:[K(0, {al:alBot}), K(0.1, {}), K(0.45, {al:alTop}), K(0.58, {}), K(0.95, {al:alBot})],
+    pre:p => {
+      Object.assign(p, mk(p.al), {n:-4});
+      const S = shoulderOf(p), hand = add(Q, ang(Q, S), Lt);
+      return Object.assign(p, T('aN', ...hand), T('aF', ...hand));
+    }, pins:[['lN.end'],['lN.toe']]};
+}
+function tableRowDef(archer){
+  // lying under a sturdy table, heels on the floor, body straight; pull the
+  // chest up to the table edge. Archer: the far arm stays straight (its hand
+  // grips further along the edge, so from the side that arm looks short).
+  const P = [34, 37], A = [92, G-1];
+  const mk = al => plankFromAnkle(A, al, al+90);
+  const alBot = solve(al => dist(shoulderOf(mk(al)), P) - (ARM - 0.5), 195, 240);
+  const alTop = solve(al => dist(shoulderOf(mk(al)), P) - 16, alBot, 240);
+  return {face:1, dur:2.6, still:0.45, ceil:34, ext:[0, 36, 34],
+    props:'<path class="bar" d="M0 34H36M3 34V90"/>',
+    keys:[K(0, {al:alBot}), K(0.1, {}), K(0.45, {al:alTop}), K(0.58, {}), K(0.95, {al:alBot})],
+    pre:p => Object.assign(p, mk(p.al), {n:-6}, T('aN', ...P), T('aF', ...P, archer ? {'aF.str':1} : {})),
+    pins:[['aN.end'],['lN.end']]};
+}
+function bearDef(){
+  // hands under shoulders, knees under hips hovering ~an inch up, toes tucked
+  const H0 = [50, G - 4.5 - BONE.th], S0 = [H0[0] - Math.sqrt(BONE.torso**2 - (H0[1] - (G-ARM+0.6))**2), G-ARM+0.6];
+  const footF = 100, ankOff = [17, -(BONE.ft*Math.sin(footF*D2R))];
+  const D = 16;
+  const stepAt = (ph, a, b) => { const k = clamp((ph-a)/(b-a), 0, 1); return {k:EASE.io(k), lift:Math.sin(Math.PI*k)}; };
+  return {face:-1, nofloorTicks:false, still:0, keys:[K(0,{b:0}), K(0.5,{b:1})],
+    pre:function(p, ph){
+      const crawl = this.crawl;
+      const shift = crawl ? -D*ph : 0;
+      const H = [H0[0] + shift, H0[1] - (crawl ? 0 : 0.5*p.b)], S = [S0[0] + shift, S0[1] - (crawl ? 0 : 0.3*p.b)];
+      Object.assign(p, {hx:H[0], hy:H[1], t:ang(H, S), n:-4, cam:crawl ? shift : 0});
+      const place = (home, win) => {
+        if(!crawl) return {x:home, lift:0};
+        // a limb steps once per cycle in its window; between steps it is planted in the world
+        const s = stepAt(ph, ...win), off = win[0]===0 ? D*0.125 : -D*0.125;
+        return {x:home + off - D*s.k, lift:s.lift};
+      };
+      const hN = place(S0[0], [0, 0.42]), hF = place(S0[0], [0.5, 0.92]);
+      const fF = place(H0[0] + ankOff[0], [0, 0.42]), fN = place(H0[0] + ankOff[0], [0.5, 0.92]);
+      Object.assign(p, T('aN', hN.x, G - 4*hN.lift), T('aF', hF.x, G - 4*hF.lift),
+        T('lN', fN.x, G + ankOff[1] - 4*fN.lift), T('lF', fF.x, G + ankOff[1] - 4*fF.lift), {'lN.f':footF - 30*fN.lift, 'lF.f':footF - 30*fF.lift});
+      return p;
+    }};
+}
+function walkLungeDef(){
+  // world coordinates; each half cycle is one lunge (stride 36) and the camera
+  // tracks the hips. Feet are placed by their toes, so the old front foot rolls
+  // onto its ball about a fixed point as it becomes the back foot.
+  const X0 = 56, ST = 36, BT = 75;
+  const half = (front, back, off, o) => [
+    K(o+0,    {hx:off+X0-16, hy:G-21, t:-85}, toeAt(front, off+X0+6, G, 0), toeAt(back, off+X0-30, G, BT), L('aN',100,86), L('aF',100,86)),
+    K(o+0.08, {}),
+    K(o+0.2,  {hx:off+X0-4, hy:G-31, t:-88}, toeAt(back, off+X0-17, G-6, 45)),
+    K(o+0.29, {hx:off+X0+2, hy:STAND+1.5}, toeAt(back, off+X0+9, G-7, 48), SIDE_HANG),
+    K(o+0.4,  {hx:off+X0+10, hy:G-31}, toeAt(back, off+X0+ST+3, G-2, 18), toeAt(front, off+X0+6, G, 22)),
+    K(o+0.44, {hx:off+X0+12, hy:G-29}, toeAt(back, off+X0+ST+6, G, 0), toeAt(front, off+X0+6, G, 40)),
+  ];
+  // the last key is the first one a full cycle (two strides) further on, so the loop is seamless
+  const keys = [...half('lN','lF', 0, 0), ...half('lF','lN', ST, 0.5), half('lN','lF', 2*ST, 1)[0]];
+  return {dur:3.6, still:0, travel:2*ST, keys,
+    pre:(p, ph) => { p.cam = 2*ST*ph; return p; },
+    pins:[['lN.toe', 0, 0.5], ['lF.toe', 0.44, 1]]};
+}
+function jumpLungeDef(){
+  const FX = 58, BTX = 28, BT = 75;
+  const lunge = (front, back) => Object.assign({hx:42, hy:G-21, t:-85}, toeAt(front, FX+6, G, 0), toeAt(back, BTX, G, BT));
+  const air = (front, back, hy, x1, y1, f1, x2, y2, f2) => Object.assign({hx:43, hy, t:-88}, toeAt(front, x1, y1, f1), toeAt(back, x2, y2, f2));
+  return {dur:2.2, still:0, keys:[
+    K(0, lunge('lN','lF'), L('aN',125,95), L('aF',55,15)),
+    K(0.12, air('lN','lF', G-33, FX+5, G, 35, BTX+2, G, 78), both(60,20)),
+    K(0.24, air('lN','lF', G-40, 49, G-9, 40, 45, G-9, 45)),
+    K(0.36, air('lF','lN', G-31, FX+5, G-1.5, 25, BTX+2, G-1, 70)),
+    K(0.48, lunge('lF','lN'), L('aN',55,15), L('aF',125,95)),
+    K(0.52, {}),
+    K(0.62, air('lF','lN', G-33, FX+5, G, 35, BTX+2, G, 78), both(60,20)),
+    K(0.74, air('lF','lN', G-40, 49, G-9, 40, 45, G-9, 45)),
+    K(0.86, air('lN','lF', G-31, FX+5, G-1.5, 25, BTX+2, G-1, 70)),
+    K(0.98, lunge('lN','lF'), L('aN',125,95), L('aF',55,15)),
+  ]};
+}
+function burpeeDef(kind){
+  // side view, facing right: the plank has the head to the right, feet back (left)
+  const P = [62, G], FX = 46;   // hands land just in front of the feet
+  const toeFor = S => { // toe position that puts a straight body's shoulder at S
+    const al = solve(al => { const q = plankFromToe([0, G], al, 1); return shoulderOf(q)[1] - S[1]; }, -60, -0.5);
+    const q = plankFromToe([0, G], al, 1); return [S[0] - shoulderOf(q)[0], al];
+  };
+  const Sp = [P[0], G - ARM + 0.6], [tx, alP] = toeFor(Sp), toe = [tx, G];
+  const plank = al => plankFromToe(toe, al, 1);
+  const alLow = solve(al => shoulderOf(plank(al))[1] - (G - 9.5), alP, 0);
+  const pk = plank(alP), pkA = [pk.hx + LEG*Math.cos((alP+180)*D2R), pk.hy + LEG*Math.sin((alP+180)*D2R)];
+  const plankLegs = Object.assign(toeAt('lN', ...toe, alP+90), toeAt('lF', ...toe, alP+90));
+  const crouchLegs = Object.assign(toeAt('lN', FX+BONE.ft, G, 0), toeAt('lF', FX+BONE.ft, G, 0));
+  // arm targets exist in every key (they are carried forward), so free-arm keys switch them off with w:0
+  const hands = Object.assign(T('aN', ...P), T('aF', ...P), {'aN.w':1, 'aF.w':1});
+  const free = {'aN.w':0, 'aF.w':0, 'lN.w':1, 'lF.w':1};
+  const stand = Object.assign({hx:FX-1, hy:STAND, t:-90, n:0}, crouchLegs, SIDE_HANG, free);
+  const squat = Object.assign({hx:FX-9, hy:72, t:-44, n:-10}, crouchLegs, both(35, 15), free);
+  const crouch = Object.assign({hx:FX-7, hy:70, t:-28, n:-20}, crouchLegs, hands);
+  const plankP = Object.assign({hx:pk.hx, hy:pk.hy, t:alP, n:0}, plankLegs, hands);
+  const low = Object.assign({}, plankP, (() => { const q = plank(alLow); return Object.assign({hx:q.hx, hy:q.hy, t:alLow}, toeAt('lN', ...toe, alLow+90), toeAt('lF', ...toe, alLow+90)); })());
+  const air = (o, h) => Object.assign({}, o, {hy:o.hy - h});
+  const lift = (id, x, y, f) => toeAt(id, x, y, f);
+  // mid-jump: the feet are in the air but the shoulders stay stacked over the planted hands
+  const midT = -10, midH = add([P[0]+1, G-ARM+2], midT+180, BONE.torso);   // shoulders stay over the hands
+  const mid = Object.assign({}, crouch, {hx:midH[0], hy:midH[1], t:midT});
+  let keys;
+  if(kind==='step'){
+    const halfH = add([P[0]+1, G-ARM+2], -14+180, BONE.torso);
+    const half = Object.assign({}, crouch, {hx:halfH[0], hy:halfH[1], t:-14}, lift('lN', ...toe, alP+90), lift('lF', FX+BONE.ft, G, 0));
+    const stepN = Object.assign({}, half, lift('lN', (FX+toe[0])/2, G-6, 95));
+    keys = [K(0, stand), K(0.06, stand), K(0.16, squat), K(0.24, crouch), K(0.31, stepN), K(0.37, half),
+      K(0.44, Object.assign({}, half, lift('lF', (FX+toe[0])/2, G-6, 95))), K(0.5, plankP), K(0.58, plankP),
+      K(0.64, Object.assign({}, half, lift('lF', (FX+toe[0])/2, G-6, 95))), K(0.7, half), K(0.77, stepN), K(0.83, crouch),
+      K(0.9, squat)];
+  } else {
+    const jumpBack = Object.assign({}, mid, lift('lN', midH[0]-3, G-4, 105), lift('lF', midH[0]-3, G-4, 105));
+    // take-off: hips pop up and the feet leave the floor before they travel back
+    // weight shifts forward onto the hands (shoulders just past the wrists) so the hips rise
+    const toT = -16, toH = add([P[0]+2, G-ARM+3], toT+180, BONE.torso);
+    const takeoff = Object.assign({}, crouch, {hx:toH[0], hy:toH[1], t:toT});
+    const base = [K(0, stand), K(0.05, stand), K(0.13, squat), K(0.2, crouch), K(0.225, takeoff), K(0.27, jumpBack), K(0.32, plankP)];
+    const mid2 = kind==='half' ? [K(0.4, plankP)] : [K(0.36, plankP), K(0.46, low), K(0.5, low), K(0.58, plankP)];
+    const o = kind==='half' ? 0.4 : 0.58;
+    const back = [K(o+0.05, jumpBack), K(o+0.095, takeoff), K(o+0.12, crouch), K(o+0.18, squat)];
+    const finish = kind==='half' ? [K(o+0.32, stand)] : kind==='full'
+      ? [K(o+0.25, Object.assign({}, stand, {hy:STAND+3}, both(-80, -85))),
+         K(o+0.31, Object.assign(air(stand, 7), lift('lN', FX+5, G-2, 60), lift('lF', FX+5, G-2, 60), both(-84, -88))),
+         K(o+0.37, Object.assign({}, stand, {hy:STAND+3}, both(30, 20)))]
+      : [K(o+0.25, Object.assign({}, stand, {hy:STAND+3}, both(-30, -40))),
+         K(o+0.31, Object.assign(air(stand, 12), L('lN', 8, 110), L('lF', 8, 110), {'lN.f':60, 'lF.f':60, 'lN.w':0, 'lF.w':0}, both(30, -40), {t:-84})),
+         K(o+0.37, Object.assign({}, stand, {hy:STAND+3}, both(40, 20)))];
+    keys = [...base, ...mid2, ...back, ...finish].filter(k => k._t < 1);
+  }
+  return {face:1, dur:kind==='step' ? 6.5 : kind==='half' ? 3.8 : 5.2, still:kind==='full'||kind==='tuck' ? 0.46 : 0.5, keys,
+    pins:[['aN.end', kind==='step' ? 0.24 : 0.2, kind==='step' ? 0.83 : 0.2 + (kind==='half' ? 0.32 : 0.5)]]};
+}
+
+/* ---- rendering ---- */
+// Frame each move: a square viewBox (never smaller than 100 units, so every
+// figure is drawn at the same scale) centred on everything the move touches.
+function frameOf(def){
+  if(def._vb) return def._vb;
+  let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
+  const take = (x, y, r) => { x0 = Math.min(x0, x-r); x1 = Math.max(x1, x+r); y0 = Math.min(y0, y-r); y1 = Math.max(y1, y+r); };
+  for(let i=0;i<48;i++){
+    const q = pose(def, i/48), cx = q.cam;
+    take(q.head[0]-cx, q.head[1], BONE.headR);
+    Object.values(q.limbs).forEach(lb => [...lb.pts, lb.toe].forEach(pt => pt && take(pt[0]-cx, pt[1], 2.5)));
+  }
+  if(def.ext){ take(def.ext[0], def.ext[2], 1); take(def.ext[1], def.ext[2], 1); }
+  const W = Math.max(100, x1-x0+12, y1-y0+12), cxm = (x0+x1)/2, cym = (y0+y1)/2;
+  let y = def.view==='top' ? cym - W/2 : lerp(FLOOR+6-W, cym-W/2, 0.85);
+  if(def.view!=='top') y = Math.max(Math.min(y, y0-5), FLOOR+5-W);
+  return (def._vb = [cxm-W/2, y, W]);
+}
+function svgPts(pts){ return 'M' + pts.map(q => q[0].toFixed(1)+' '+q[1].toFixed(1)).join('L'); }
+function drawFig(svg, ph){
+  const def = MOVES[svg.dataset.type];
+  if(!def) return;
+  const q = pose(def, ph), el = svg._el || (svg._el = {
+    fig:svg.querySelector('.figure'), torso:svg.querySelector('.torso'), head:svg.querySelector('.head'),
+    aN:svg.querySelector('.aN'), aF:svg.querySelector('.aF'), lN:svg.querySelector('.lN'), lF:svg.querySelector('.lF'),
+    dyn:svg.querySelector('.dyn'), floor:svg.querySelector('.floor')});
+  const cam = q.cam;
+  el.fig.setAttribute('transform', cam ? `translate(${(-cam).toFixed(2)} 0)` : '');
+  if(el.floor && (def.travel!==undefined || def.crawl)) el.floor.style.strokeDashoffset = cam.toFixed(2);
+  const [H, S] = [q.H, q.S];
+  let d;
+  if(q.view==='head'){ d = svgPts([q.rF, q.rN]); q.head = [q.S[0], q.S[1] + 4.5]; }
+  else if(q.c){
+    const m = [(H[0]+S[0])/2, (H[1]+S[1])/2], nrm = dir(ang(H, S) - 90), cp = [m[0] + nrm[0]*q.c*2, m[1] + nrm[1]*q.c*2];
+    d = `M${H[0].toFixed(1)} ${H[1].toFixed(1)}Q${cp[0].toFixed(1)} ${cp[1].toFixed(1)} ${S[0].toFixed(1)} ${S[1].toFixed(1)}`;
+  } else d = svgPts([H, S]);
+  if(def.bar && q.view!=='head') d += svgPts([q.rF, q.rN]);
+  el.torso.setAttribute('d', d);
+  el.head.setAttribute('cx', q.head[0].toFixed(1)); el.head.setAttribute('cy', q.head[1].toFixed(1));
+  ['aN','aF','lN','lF'].forEach(id => {
+    const lb = q.limbs[id], pts = lb.toe ? [...lb.pts, lb.toe] : lb.pts;
+    el[id].setAttribute('d', q.view==='head' && id==='lN' ? '' : svgPts(pts));
+  });
+  if(el.dyn && def.dyn==='towel'){ const e = q.limbs.aN.pts[2]; el.dyn.setAttribute('d', svgPts([def.anchor, e])); }
+}
 function figureSVG(type){
-  if(PRONE_TYPES.has(type)) return proneFigureSVG(type);
-  if(SUPINE_TYPES.has(type)) return supineFigureSVG(type);
-  if(QUAD_TYPES.has(type)) return quadFigureSVG(type);
-  if(LYING_TYPES.has(type)) return lyingFigureSVG(type);
-  if(PIKE_TYPES.has(type)) return pikeFigureSVG(type);
-  if(INCLINE_TYPES.has(type)) return inclineRowFigureSVG(type);
-  if(KNEEL_TYPES.has(type)) return kneelFigureSVG(type);
-  if(SIDE_TYPES.has(type)) return sidePlankFigureSVG(type);
-  if(INCLINE_PUSHUP_TYPES.has(type)) return inclinePushupFigureSVG(type);
-  if(LUNGE_TYPES.has(type)) return lungeFigureSVG(type);
-  if(ROW_TYPES.has(type)) return towelRowFigureSVG(type);
-  if(CHEST_TYPES.has(type)) return chestOpenerFigureSVG(type);
-  return standFigureSVG(type);
-}
-
-/* Lying on the back, side profile — head left, knees bent up.
-   Used for crunches, dead bug, glute bridge, hollow body. */
-function supineFigureSVG(type){
-  const vb = "transform-box:view-box;";
-  return `
-  <svg class="fig t-${type}" viewBox="0 0 100 100">
-    <line class="floor" x1="8" y1="80" x2="94" y2="80"></line>
-    <g class="figure" style="${vb}transform-origin:50px 60px">
-      <g class="s-legUp" style="${vb}transform-origin:62px 70px">
-        <line x1="62" y1="70" x2="74" y2="54"></line>
-        <g class="s-legLow" style="${vb}transform-origin:74px 54px">
-          <line x1="74" y1="54" x2="82" y2="72"></line>
-        </g>
-      </g>
-      <g class="s-torsoG" style="${vb}transform-origin:62px 70px">
-        <line class="torso" x1="28" y1="70" x2="62" y2="70"></line>
-        <circle class="head" cx="21" cy="66" r="7"></circle>
-        <g class="s-armUp" style="${vb}transform-origin:30px 70px">
-          <line x1="30" y1="70" x2="30" y2="54"></line>
-          <g class="s-armLow" style="${vb}transform-origin:30px 54px">
-            <line x1="30" y1="54" x2="30" y2="40"></line>
-          </g>
-        </g>
-      </g>
-    </g>
+  const def = MOVES[type] || MOVES.march;
+  const travel = def.travel!==undefined || def.crawl;
+  const [vx, vy, W] = frameOf(def);
+  const floor = def.view==='top' ? '' : `<path class="floor${travel ? ' ticks' : ''}" d="M${(vx-20).toFixed(1)} ${FLOOR}H${(vx+W+20).toFixed(1)}"/>`;
+  return `<svg class="fig t-${type}" data-type="${type}" viewBox="${[vx, vy, W, W].map(v => v.toFixed(1)).join(' ')}" aria-hidden="true">
+    ${floor}${def.props || ''}${def.dyn ? '<path class="bar dyn"/>' : ''}
+    <g class="figure"><path class="aF far"/><path class="lF far"/><path class="torso"/><circle class="head" r="${BONE.headR}"/><path class="lN"/><path class="aN"/></g>
   </svg>`;
 }
+/* FIGURE ENGINE END */
 
-/* On all fours, side profile — used for bird dog and cat-cow. */
-function quadFigureSVG(type){
-  const vb = "transform-box:view-box;";
-  return `
-  <svg class="fig t-${type}" viewBox="0 0 100 100">
-    <line class="floor" x1="8" y1="84" x2="94" y2="84"></line>
-    <g class="figure" style="${vb}transform-origin:50px 60px">
-      <g class="q-legUp" style="${vb}transform-origin:66px 50px">
-        <line x1="66" y1="50" x2="72" y2="68"></line>
-        <g class="q-legLow" style="${vb}transform-origin:72px 68px">
-          <line x1="72" y1="68" x2="88" y2="82"></line>
-        </g>
-      </g>
-      <g class="q-torsoG" style="${vb}transform-origin:66px 50px">
-        <line class="torso" x1="30" y1="50" x2="66" y2="50"></line>
-        <circle class="head" cx="22" cy="46" r="7"></circle>
-        <g class="q-armUp" style="${vb}transform-origin:30px 50px">
-          <line x1="30" y1="50" x2="29" y2="66"></line>
-          <g class="q-armLow" style="${vb}transform-origin:29px 66px">
-            <line x1="29" y1="66" x2="28" y2="82"></line>
-          </g>
-        </g>
-      </g>
-    </g>
-  </svg>`;
+/* Animation loop: only figures in open rows are drawn, each from the moment
+   its row opened (so a demo always starts at the beginning of a rep). With
+   reduced motion every figure shows its key position, still. */
+let figRAF = 0;
+function figFrame(now){
+  figRAF = 0;
+  if(reduceMotion.matches) return;
+  const figs = document.querySelectorAll('.exrow.open .fig');
+  if(!figs.length) return;
+  figs.forEach(svg => {
+    if(!svg._t0) svg._t0 = now;
+    const def = MOVES[svg.dataset.type];
+    drawFig(svg, ((now - svg._t0)/(def.dur*1000)) % 1);
+  });
+  figRAF = requestAnimationFrame(figFrame);
 }
-
-/* Lying flat face down — used for Superman, snow angels, Y-raises. */
-function lyingFigureSVG(type){
-  const vb = "transform-box:view-box;";
-  return `
-  <svg class="fig t-${type}" viewBox="0 0 100 100">
-    <line class="floor" x1="6" y1="74" x2="96" y2="74"></line>
-    <g class="figure" style="${vb}transform-origin:50px 64px">
-      <g class="l-armUp" style="${vb}transform-origin:36px 64px">
-        <line x1="36" y1="64" x2="22" y2="64"></line>
-        <g class="l-armLow" style="${vb}transform-origin:22px 64px">
-          <line x1="22" y1="64" x2="8" y2="64"></line>
-        </g>
-      </g>
-      <g class="l-legUp" style="${vb}transform-origin:64px 64px">
-        <line x1="64" y1="64" x2="78" y2="65"></line>
-        <g class="l-legLow" style="${vb}transform-origin:78px 65px">
-          <line x1="78" y1="65" x2="93" y2="66"></line>
-        </g>
-      </g>
-      <g class="l-torsoG" style="${vb}transform-origin:64px 64px">
-        <line class="torso" x1="36" y1="64" x2="64" y2="64"></line>
-        <circle class="head" cx="29" cy="60" r="7"></circle>
-      </g>
-    </g>
-  </svg>`;
-}
-
-/* Hips-high inverted-V rig — used for pike push-ups. The hip is the highest
-   point of the silhouette (transform-origin for the whole figure), with the
-   torso/head/arm dropping away toward the floor on one side and the legs
-   dropping away on the other, so it actually reads as a pike and not a flat
-   plank. */
-function pikeFigureSVG(type){
-  const vb = "transform-box:view-box;";
-  return `
-  <svg class="fig t-${type}" viewBox="0 0 100 100">
-    <line class="floor" x1="6" y1="86" x2="96" y2="86"></line>
-    <g class="figure" style="${vb}transform-origin:54px 26px">
-      <g class="p-legUp" style="${vb}transform-origin:54px 26px">
-        <line x1="54" y1="26" x2="70" y2="52"></line>
-        <g class="p-legLow" style="${vb}transform-origin:70px 52px">
-          <line x1="70" y1="52" x2="88" y2="84"></line>
-        </g>
-      </g>
-      <g class="p-torsoG" style="${vb}transform-origin:54px 26px">
-        <line class="torso" x1="54" y1="26" x2="31" y2="47"></line>
-        <circle class="head" cx="23" cy="41" r="7"></circle>
-        <g class="p-armUp" style="${vb}transform-origin:31px 47px">
-          <line x1="31" y1="47" x2="24" y2="65"></line>
-          <g class="p-armLow" style="${vb}transform-origin:24px 65px">
-            <line x1="24" y1="65" x2="18" y2="84"></line>
-          </g>
-        </g>
-      </g>
-    </g>
-  </svg>`;
-}
-
-/* Lying under a fixed bar/table edge, pulling the chest up toward it —
-   used for table row and archer table row. A short static bar sits above
-   the hands so the "fixed overhead grip" reads clearly, distinct from the
-   standing anchored pull used for towel row. */
-function inclineRowFigureSVG(type){
-  const vb = "transform-box:view-box;";
-  return `
-  <svg class="fig t-${type}" viewBox="0 0 100 100">
-    <line class="floor" x1="6" y1="88" x2="96" y2="88"></line>
-    <line class="bar" x1="2" y1="16" x2="28" y2="16"></line>
-    <g class="figure" style="${vb}transform-origin:86px 86px">
-      <line class="i-leg" x1="86" y1="86" x2="60" y2="63"></line>
-      <g class="i-torsoG" style="${vb}transform-origin:60px 63px">
-        <line class="torso" x1="60" y1="63" x2="37" y2="42"></line>
-        <circle class="head" cx="35" cy="32" r="7"></circle>
-        <g class="i-armUp" style="${vb}transform-origin:37px 42px">
-          <line x1="37" y1="42" x2="23" y2="27"></line>
-          <g class="i-armLow" style="${vb}transform-origin:23px 27px">
-            <line x1="23" y1="27" x2="13" y2="16"></line>
-          </g>
-        </g>
-      </g>
-    </g>
-  </svg>`;
-}
-
-/* Kneeling, hips sunk to heels, chest low and arms walked out along the
-   floor — used for child's pose. Deliberately a mostly-static resting
-   shape (only a slow breathing sway), since this is a passive stretch,
-   not a repeated rep. */
-function kneelFigureSVG(type){
-  const vb = "transform-box:view-box;";
-  return `
-  <svg class="fig t-${type}" viewBox="0 0 100 100">
-    <line class="floor" x1="6" y1="88" x2="96" y2="88"></line>
-    <g class="figure" style="${vb}transform-origin:70px 76px">
-      <line x1="70" y1="76" x2="82" y2="88"></line>
-      <line x1="70" y1="76" x2="88" y2="86"></line>
-      <g class="k-torsoG" style="${vb}transform-origin:70px 76px">
-        <line class="torso" x1="70" y1="76" x2="38" y2="83"></line>
-        <circle class="head" cx="26" cy="84" r="7"></circle>
-        <line x1="38" y1="83" x2="12" y2="85"></line>
-      </g>
-    </g>
-  </svg>`;
-}
-
-/* Front-on diagonal rig — used for side plank. This is a genuinely
-   different orientation than the prone plank (lying on the SIDE, propped
-   on one forearm, feet stacked), so it needs its own silhouette: a single
-   straight line from the stacked feet up through the hip to the head,
-   with one forearm bracing on the floor beneath. */
-function sidePlankFigureSVG(type){
-  const vb = "transform-box:view-box;";
-  return `
-  <svg class="fig t-${type}" viewBox="0 0 100 100">
-    <line class="floor" x1="6" y1="88" x2="96" y2="88"></line>
-    <g class="figure" style="${vb}transform-origin:28px 88px">
-      <line class="sp-leg" x1="28" y1="88" x2="46" y2="62"></line>
-      <g class="sp-torsoG" style="${vb}transform-origin:46px 62px">
-        <line class="torso" x1="46" y1="62" x2="62" y2="36"></line>
-        <circle class="head" cx="68" cy="27" r="7"></circle>
-        <g class="sp-armUp" style="${vb}transform-origin:62px 36px">
-          <line x1="62" y1="36" x2="57" y2="58"></line>
-          <g class="sp-armLow" style="${vb}transform-origin:57px 58px">
-            <line x1="57" y1="58" x2="52" y2="80"></line>
-          </g>
-        </g>
-      </g>
-    </g>
-  </svg>`;
-}
-
-/* Side-profile lunge rig — a lunge is a front-to-back (sagittal) movement,
-   which a front-facing figure literally cannot show (both legs would just
-   splay symmetrically left/right with no way to read "one foot forward,
-   one foot back"). Viewed from the side, the front leg bends forward with
-   the knee stacking over the ankle, and the back leg trails behind with
-   the knee dropping toward the floor — the actual lunge silhouette. */
-function lungeFigureSVG(type){
-  const vb = "transform-box:view-box;";
-  const isBulgarian = type === "bulgariansplit";
-  const isPistol = type === "pistol";
-
-  // Bulgarian split squat: the rear leg doesn't trail down toward the
-  // floor — its foot rests fixed on a chair the whole time, so it's drawn
-  // shorter, ending on top of a drawn chair, and (see CSS) never animated.
-  const backLegSVG = isBulgarian ? `
-      <g class="lu-backUp" style="${vb}transform-origin:50px 48px">
-        <line x1="50" y1="48" x2="49" y2="60"></line>
-        <g class="lu-backLow" style="${vb}transform-origin:49px 60px">
-          <line x1="49" y1="60" x2="47" y2="70"></line>
-        </g>
-      </g>` : `
-      <g class="lu-backUp" style="${vb}transform-origin:50px 48px">
-        <line x1="50" y1="48" x2="48" y2="66"></line>
-        <g class="lu-backLow" style="${vb}transform-origin:48px 66px">
-          <line x1="48" y1="66" x2="46" y2="88"></line>
-        </g>
-      </g>`;
-
-  // Pistol squat: the extended leg is held out in front the whole time,
-  // so it's drawn already forward-and-up at rest — the animation only
-  // needs a small additional lift, instead of relying on a huge rotation
-  // to swing a vertical leg out into a kick.
-  const frontLegSVG = isPistol ? `
-      <g class="lu-frontUp" style="${vb}transform-origin:50px 48px">
-        <line x1="50" y1="48" x2="70" y2="55"></line>
-        <g class="lu-frontLow" style="${vb}transform-origin:70px 55px">
-          <line x1="70" y1="55" x2="88" y2="52"></line>
-        </g>
-      </g>` : `
-      <g class="lu-frontUp" style="${vb}transform-origin:50px 48px">
-        <line x1="50" y1="48" x2="52" y2="66"></line>
-        <g class="lu-frontLow" style="${vb}transform-origin:52px 66px">
-          <line x1="52" y1="66" x2="54" y2="88"></line>
-        </g>
-      </g>`;
-
-  const chairSVG = isBulgarian ? `
-    <line class="bar" x1="40" y1="70" x2="58" y2="70"></line>
-    <line class="bar" x1="40" y1="70" x2="40" y2="86"></line>
-    <line class="bar" x1="58" y1="70" x2="58" y2="86"></line>` : "";
-
-  const doorframeSVG = isPistol ? `<line class="bar" x1="14" y1="8" x2="14" y2="90"></line>` : "";
-
-  // Pistol squat: the free hand holds the doorframe for balance instead
-  // of hanging at the side, so it's drawn reaching toward the frame.
-  const armSVG = isPistol ? `
-        <g class="lu-armUp" style="${vb}transform-origin:48px 26px">
-          <line x1="48" y1="26" x2="20" y2="30"></line>
-        </g>` : `
-        <g class="lu-armUp" style="${vb}transform-origin:48px 26px">
-          <line x1="48" y1="26" x2="42" y2="42"></line>
-        </g>`;
-
-  return `
-  <svg class="fig t-${type}" viewBox="0 0 100 100">
-    <line class="floor" x1="6" y1="90" x2="96" y2="90"></line>
-    ${chairSVG}${doorframeSVG}
-    <g class="figure" style="${vb}transform-origin:50px 48px">
-      ${backLegSVG}
-      ${frontLegSVG}
-      <g class="lu-torsoG" style="${vb}transform-origin:50px 48px">
-        <line class="torso" x1="50" y1="48" x2="48" y2="20"></line>
-        <circle class="head" cx="47" cy="13" r="7"></circle>
-        ${armSVG}
-      </g>
-    </g>
-  </svg>`;
-}
-
-/* Side-profile "on the ground" rig — head/shoulder/hip/hand/foot laid out
-   horizontally. This reads far more clearly as a push-up / plank / mountain
-   climber than a front-facing standing figure ever can, since the bend at
-   the elbow is visible as an actual silhouette change. */
-function proneFigureSVG(type){
-  const vb = "transform-box:view-box;";
-  const isKneeDown = type === "kneepushup" || type === "kneeplank";
-  // Knee-down variants: the knee is the floor-contact point, planted close
-  // under the hip, with the shin/feet trailing up and back — a distinctly
-  // different silhouette from the long hip-to-toe leg used for the full
-  // (toes-down) versions, instead of an identical, undifferentiated pose.
-  const legSVG = isKneeDown ? `
-      <g class="p-legUp" style="${vb}transform-origin:62px 50px">
-        <line x1="62" y1="50" x2="66" y2="82"></line>
-        <g class="p-legLow" style="${vb}transform-origin:66px 82px">
-          <line x1="66" y1="82" x2="88" y2="76"></line>
-        </g>
-      </g>` : `
-      <g class="p-legUp" style="${vb}transform-origin:62px 50px">
-        <line x1="62" y1="50" x2="78" y2="64"></line>
-        <g class="p-legLow" style="${vb}transform-origin:78px 64px">
-          <line x1="78" y1="64" x2="92" y2="80"></line>
-        </g>
-      </g>`;
-  return `
-  <svg class="fig t-${type}" viewBox="0 0 100 100">
-    <line class="floor" x1="6" y1="86" x2="96" y2="86"></line>
-    <g class="figure" style="${vb}transform-origin:50px 55px">
-      ${legSVG}
-      <g class="p-torsoG" style="${vb}transform-origin:62px 50px">
-        <line class="torso" x1="25" y1="48" x2="62" y2="50"></line>
-        <circle class="head" cx="18" cy="42" r="7"></circle>
-        <g class="p-armUp" style="${vb}transform-origin:25px 48px">
-          <line x1="25" y1="48" x2="22" y2="64"></line>
-          <g class="p-armLow" style="${vb}transform-origin:22px 64px">
-            <line x1="22" y1="64" x2="20" y2="82"></line>
-          </g>
-        </g>
-      </g>
-    </g>
-  </svg>`;
-}
-
-/* Same rig and joint names as the flat prone push-up, but the whole upper
-   body is drawn elevated with the hand resting on a drawn couch/table
-   edge while the feet stay down on the actual floor — so the incline is
-   visible, not just described in the cue. Reuses the pushup keyframes
-   (same class names) since the bend-and-dip motion is identical. */
-function inclinePushupFigureSVG(type){
-  const vb = "transform-box:view-box;";
-  return `
-  <svg class="fig t-${type}" viewBox="0 0 100 100">
-    <line class="floor" x1="6" y1="86" x2="96" y2="86"></line>
-    <line class="bar" x1="3" y1="56" x2="27" y2="56"></line>
-    <line class="bar" x1="3" y1="56" x2="3" y2="80"></line>
-    <line class="bar" x1="27" y1="56" x2="27" y2="80"></line>
-    <g class="figure" style="${vb}transform-origin:50px 55px">
-      <g class="p-legUp" style="${vb}transform-origin:62px 50px">
-        <line x1="62" y1="50" x2="78" y2="64"></line>
-        <g class="p-legLow" style="${vb}transform-origin:78px 64px">
-          <line x1="78" y1="64" x2="92" y2="80"></line>
-        </g>
-      </g>
-      <g class="p-torsoG" style="${vb}transform-origin:62px 50px">
-        <line class="torso" x1="25" y1="36" x2="62" y2="50"></line>
-        <circle class="head" cx="18" cy="30" r="7"></circle>
-        <g class="p-armUp" style="${vb}transform-origin:25px 36px">
-          <line x1="25" y1="36" x2="22" y2="46"></line>
-          <g class="p-armLow" style="${vb}transform-origin:22px 46px">
-            <line x1="22" y1="46" x2="20" y2="56"></line>
-          </g>
-        </g>
-      </g>
-    </g>
-  </svg>`;
-}
-
-/* Standing, leaning back against a towel looped around a fixed post —
-   used for Towel Row. The post and towel are drawn as static objects
-   (outside the animated figure group) so the "anchored" mechanic actually
-   reads, instead of a generic standing arm-curl with nothing to pull
-   against. The hand meets the towel's fixed end point at rest. */
-function towelRowFigureSVG(type){
-  const vb = "transform-box:view-box;";
-  return `
-  <svg class="fig t-${type}" viewBox="0 0 100 100">
-    <line class="floor" x1="6" y1="88" x2="96" y2="88"></line>
-    <line class="bar" x1="90" y1="15" x2="90" y2="88"></line>
-    <line class="bar" x1="90" y1="32" x2="68" y2="38"></line>
-    <g class="figure" style="${vb}transform-origin:48px 62px">
-      <g class="rw-legUp" style="${vb}transform-origin:48px 62px">
-        <line x1="48" y1="62" x2="52" y2="78"></line>
-        <g class="rw-legLow" style="${vb}transform-origin:52px 78px">
-          <line x1="52" y1="78" x2="54" y2="88"></line>
-        </g>
-      </g>
-      <g class="rw-torsoG" style="${vb}transform-origin:48px 62px">
-        <line class="torso" x1="48" y1="62" x2="30" y2="34"></line>
-        <circle class="head" cx="25" cy="28" r="7"></circle>
-        <g class="rw-armUp" style="${vb}transform-origin:30px 34px">
-          <line x1="30" y1="34" x2="50" y2="36"></line>
-          <g class="rw-armLow" style="${vb}transform-origin:50px 36px">
-            <line x1="50" y1="36" x2="68" y2="38"></line>
-          </g>
-        </g>
-      </g>
-    </g>
-  </svg>`;
-}
-
-/* Standing, THREE-QUARTER angle (between profile and front-on) — used
-   for Chest Opener Stretch. A true front view with both arms pulling
-   back symmetrically to one low point read as an odd/off-putting shape.
-   A 3/4 turn is more natural for this stretch anyway: the near arm
-   clearly bends back to a hand point at mid-back height, while the far
-   arm is mostly hidden behind the torso (as it would be from this
-   angle) rather than mirrored out to its own matching point. */
-function chestOpenerFigureSVG(type){
-  const vb = "transform-box:view-box;";
-  return `
-  <svg class="fig t-${type}" viewBox="0 0 100 100">
-    <line class="floor" x1="6" y1="94" x2="96" y2="94"></line>
-    <g class="figure" style="${vb}transform-origin:50px 55px">
-      <g class="legL-up" style="${vb}transform-origin:50px 58px">
-        <line x1="50" y1="58" x2="45" y2="76"></line>
-        <g class="legL-low" style="${vb}transform-origin:45px 76px">
-          <line x1="45" y1="76" x2="43" y2="94"></line>
-        </g>
-      </g>
-      <g class="legR-up" style="${vb}transform-origin:50px 58px">
-        <line x1="50" y1="58" x2="57" y2="76"></line>
-        <g class="legR-low" style="${vb}transform-origin:57px 76px">
-          <line x1="57" y1="76" x2="60" y2="94"></line>
-        </g>
-      </g>
-      <g class="torsoG" style="${vb}transform-origin:50px 58px">
-        <line class="torso" x1="52" y1="25" x2="50" y2="58"></line>
-        <circle class="head" cx="54" cy="16" r="7"></circle>
-        <g class="co-armFar" style="${vb}transform-origin:52px 25px">
-          <line x1="52" y1="25" x2="47" y2="35"></line>
-        </g>
-        <g class="co-armNear" style="${vb}transform-origin:52px 25px">
-          <line x1="52" y1="25" x2="66" y2="34"></line>
-          <g class="co-armNearLow" style="${vb}transform-origin:66px 34px">
-            <line x1="66" y1="34" x2="52" y2="45"></line>
-          </g>
-        </g>
-        <circle class="hands" cx="50" cy="47" r="3"></circle>
-      </g>
-    </g>
-  </svg>`;
-}
-
-function standFigureSVG(type){
-  // Jointed rig: every rotating group's transform-origin is set explicitly
-  // to that joint's coordinate in the SVG's own user-space (transform-box:view-box),
-  // so nested groups (forearm inside upper-arm, shin inside thigh) pivot correctly
-  // at the elbow/knee instead of the bounding-box center.
-  const vb = "transform-box:view-box;";
-  return `
-  <svg class="fig t-${type}" viewBox="0 0 100 100">
-    <line class="floor" x1="6" y1="94" x2="96" y2="94"></line>
-    <g class="figure" style="${vb}transform-origin:50px 55px">
-      <g class="legL-up" style="${vb}transform-origin:50px 58px">
-        <line x1="50" y1="58" x2="42" y2="76"></line>
-        <g class="legL-low" style="${vb}transform-origin:42px 76px">
-          <line x1="42" y1="76" x2="40" y2="94"></line>
-        </g>
-      </g>
-      <g class="legR-up" style="${vb}transform-origin:50px 58px">
-        <line x1="50" y1="58" x2="58" y2="76"></line>
-        <g class="legR-low" style="${vb}transform-origin:58px 76px">
-          <line x1="58" y1="76" x2="60" y2="94"></line>
-        </g>
-      </g>
-      <g class="torsoG" style="${vb}transform-origin:50px 58px">
-        <line class="torso" x1="50" y1="25" x2="50" y2="58"></line>
-        <circle class="head" cx="50" cy="16" r="7"></circle>
-        <g class="armL-up" style="${vb}transform-origin:50px 25px">
-          <line x1="50" y1="25" x2="36" y2="40"></line>
-          <g class="armL-low" style="${vb}transform-origin:36px 40px">
-            <line x1="36" y1="40" x2="30" y2="54"></line>
-          </g>
-        </g>
-        <g class="armR-up" style="${vb}transform-origin:50px 25px">
-          <line x1="50" y1="25" x2="64" y2="40"></line>
-          <g class="armR-low" style="${vb}transform-origin:64px 40px">
-            <line x1="64" y1="40" x2="70" y2="54"></line>
-          </g>
-        </g>
-      </g>
-    </g>
-  </svg>`;
-}
+function kickFigs(){ if(!figRAF && !reduceMotion.matches) figRAF = requestAnimationFrame(figFrame); }
+function stillFig(svg){ svg._t0 = 0; drawFig(svg, MOVES[svg.dataset.type].still || 0); }
+function initFigs(root){ root.querySelectorAll('.fig').forEach(stillFig); }
 
 /* =========================================================
    WORKOUT PLAN + SET LOGGING
@@ -1191,6 +1541,7 @@ function nextUp(plan, d){
    (refresh) so every state change can transition, not snap.
    ========================================================= */
 const reduceMotion = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : {matches:false};
+if(reduceMotion.addEventListener) reduceMotion.addEventListener('change', () => { document.querySelectorAll('.fig').forEach(stillFig); kickFigs(); });
 let view = null;          // {w, plan} for the day on screen
 let navDir = 0;
 let lastCurrentKey = null;
@@ -1266,6 +1617,7 @@ function render(){
   html += `<div class="footnote" style="--i:${i}"><b>${w.phase.name} phase</b> (${w.phase.weeks}): ${w.phase.blurb} Tap any move for a quick animated demo and form cue; tap the circle to log it.</div>`;
 
   app.innerHTML = html;
+  initFigs(app);
 
   // entrance: slide from the direction you navigated
   app.dataset.dir = navDir>0 ? 'next' : navDir<0 ? 'prev' : 'load';
@@ -1317,6 +1669,8 @@ function setOpen(key, open){
   const row = document.getElementById('row-'+key);
   if(!row) return;
   row.classList.toggle('open', open);
+  const fig = row.querySelector('.fig');
+  if(fig){ stillFig(fig); if(open) kickFigs(); }
   row.querySelector('.extoggle').setAttribute('aria-expanded', open);
   if(open) openRows.add(key); else openRows.delete(key);
 }
@@ -1734,522 +2088,5 @@ function chime(){ beep(523, 0.18, 0, 0.06); beep(659, 0.18, 0.1, 0.06); beep(784
 loadState();
 </script>
 
-<style>
-/* ===== Per-archetype keyframe animations (jointed rig) ===== */
-
-/* SQUAT — hips sit back, knees bend, torso leans forward. The legs counter
-   the whole-body drop (translateY(-11px) cancels the figure's +11px) so
-   the feet stay planted on the floor while only the hips/torso actually
-   sink — a real squat keeps the feet fixed, not the whole body. */
-.t-squat .figure{animation:sqBody 1.5s ease-in-out infinite}
-.t-squat .legL-up{animation:sqThighL 1.5s ease-in-out infinite}
-.t-squat .legR-up{animation:sqThighR 1.5s ease-in-out infinite}
-.t-squat .legL-low{animation:sqShinL 1.5s ease-in-out infinite}
-.t-squat .legR-low{animation:sqShinR 1.5s ease-in-out infinite}
-.t-squat .torsoG{animation:sqTorso 1.5s ease-in-out infinite}
-@keyframes sqBody{0%,100%{transform:translateY(0)}50%{transform:translateY(11px)}}
-@keyframes sqThighL{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-11px) rotate(-48deg)}}
-@keyframes sqThighR{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-11px) rotate(48deg)}}
-@keyframes sqShinL{0%,100%{transform:rotate(0)}50%{transform:rotate(70deg)}}
-@keyframes sqShinR{0%,100%{transform:rotate(0)}50%{transform:rotate(-70deg)}}
-@keyframes sqTorso{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-11px) rotate(-30deg)}}
-
-/* JUMP SQUAT — squats down, then actually leaves the ground (body rises
-   above the standing baseline, legs snap straight) before landing soft
-   back into the squat, instead of just the gentle down/up of a regular
-   squat. */
-/* JUMP SQUAT — legs cancel the whole-body drop during the squat (35%) and
-   the landing (80%) so the feet stay grounded then, but do NOT cancel it
-   during the jump itself (60%) — the feet are actually supposed to leave
-   the floor at the top of the jump. */
-.t-jumpsquat .figure{animation:jsBody 1.2s ease-in-out infinite}
-.t-jumpsquat .legL-up{animation:jsThighL 1.2s ease-in-out infinite}
-.t-jumpsquat .legR-up{animation:jsThighR 1.2s ease-in-out infinite}
-.t-jumpsquat .legL-low{animation:jsShinL 1.2s ease-in-out infinite}
-.t-jumpsquat .legR-low{animation:jsShinR 1.2s ease-in-out infinite}
-.t-jumpsquat .torsoG{animation:jsTorso 1.2s ease-in-out infinite}
-@keyframes jsBody{0%,100%{transform:translateY(0)}35%{transform:translateY(11px)}60%{transform:translateY(-9px)}80%{transform:translateY(2px)}}
-@keyframes jsThighL{0%,100%{transform:translateY(0) rotate(0)}35%{transform:translateY(-11px) rotate(-46deg)}60%{transform:translateY(0) rotate(0)}80%{transform:translateY(-2px) rotate(-18deg)}}
-@keyframes jsThighR{0%,100%{transform:translateY(0) rotate(0)}35%{transform:translateY(-11px) rotate(46deg)}60%{transform:translateY(0) rotate(0)}80%{transform:translateY(-2px) rotate(18deg)}}
-@keyframes jsShinL{0%,100%{transform:rotate(0)}35%{transform:rotate(68deg)}60%{transform:rotate(0)}80%{transform:rotate(26deg)}}
-@keyframes jsShinR{0%,100%{transform:rotate(0)}35%{transform:rotate(-68deg)}60%{transform:rotate(0)}80%{transform:rotate(-26deg)}}
-@keyframes jsTorso{0%,100%{transform:translateY(0) rotate(0)}35%{transform:translateY(-11px) rotate(-26deg)}60%{transform:translateY(0) rotate(0)}80%{transform:translateY(-2px) rotate(-8deg)}}
-
-/* PUSH-UP (side profile, on the ground) — elbow bends, chest dips to the
-   floor. The feet cancel the whole-body drop (translateY(-9px) counters
-   the figure's +9px) so the foot stays planted; the hand is left alone
-   since the elbow-bend rotation already keeps it approximately in place. */
-.t-pushup .figure, .t-inclinepushup .figure, .t-kneepushup .figure{animation:puBody 1.3s ease-in-out infinite}
-.t-pushup .p-legUp, .t-inclinepushup .p-legUp, .t-kneepushup .p-legUp{animation:puLeg 1.3s ease-in-out infinite}
-.t-pushup .p-armUp, .t-inclinepushup .p-armUp, .t-kneepushup .p-armUp{animation:puArmUp 1.3s ease-in-out infinite}
-.t-pushup .p-armLow, .t-inclinepushup .p-armLow, .t-kneepushup .p-armLow{animation:puArmLow 1.3s ease-in-out infinite}
-.t-pushup .p-torsoG, .t-inclinepushup .p-torsoG, .t-kneepushup .p-torsoG{animation:puTorso 1.3s ease-in-out infinite}
-@keyframes puBody{0%,100%{transform:translateY(0)}50%{transform:translateY(9px)}}
-@keyframes puLeg{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-9px) rotate(-6deg)}}
-@keyframes puArmUp{0%,100%{transform:rotate(0)}50%{transform:rotate(44deg)}}
-@keyframes puArmLow{0%,100%{transform:rotate(0)}50%{transform:rotate(-66deg)}}
-@keyframes puTorso{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-9px) rotate(-6deg)}}
-
-/* PLANK (side profile) — a still, braced hold */
-.t-plank .figure, .t-kneeplank .figure{animation:plBody 2.4s ease-in-out infinite}
-@keyframes plBody{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(1.5px) rotate(0.6deg)}}
-
-/* SIDE PLANK — front-on diagonal rig, lying on the side propped on one
-   forearm with feet stacked. The rep motion here is the hips dropping
-   slightly and lifting back into the straight line, rotating around the
-   fixed stacked-feet point. */
-.t-sideplank .figure{animation:spBody 2.2s ease-in-out infinite}
-@keyframes spBody{0%,100%{transform:rotate(7deg)}50%{transform:rotate(0deg)}}
-
-/* MOUNTAIN CLIMBER (side profile) — knee drives up toward the chest */
-.t-mountainclimber .p-legUp{animation:mcThigh 0.55s ease-in-out infinite}
-.t-mountainclimber .p-legLow{animation:mcShin 0.55s ease-in-out infinite}
-@keyframes mcThigh{0%,100%{transform:rotate(0)}50%{transform:rotate(-86deg)}}
-@keyframes mcShin{0%,100%{transform:rotate(0)}50%{transform:rotate(-70deg)}}
-
-/* PIKE PUSH-UP (side profile) — hips lift high, head lowers toward the hands */
-/* PIKE PUSH-UP — hips (the pivot) stay high and nearly still; the head
-   travels down toward the floor as the elbows bend, which is the whole
-   point of the movement. */
-.t-pike .figure{animation:pkBody 1.6s ease-in-out infinite}
-.t-pike .p-torsoG{animation:pkTorso 1.6s ease-in-out infinite}
-.t-pike .p-armUp{animation:pkArmUp 1.6s ease-in-out infinite}
-.t-pike .p-armLow{animation:pkArmLow 1.6s ease-in-out infinite}
-@keyframes pkBody{0%,100%{transform:translateY(0)}50%{transform:translateY(2px)}}
-@keyframes pkTorso{0%,100%{transform:rotate(0)}50%{transform:rotate(-20deg)}}
-@keyframes pkArmUp{0%,100%{transform:rotate(0)}50%{transform:rotate(14deg)}}
-@keyframes pkArmLow{0%,100%{transform:rotate(0)}50%{transform:rotate(60deg)}}
-
-/* LUNGE — side-profile rig. A lunge is a front-to-back movement that a
-   front-facing figure can't actually show (both legs would just splay
-   symmetrically with no way to read "one forward, one back"). Here the
-   front knee bends with the shin staying near-vertical over the ankle
-   (the front foot cancels the hip drop, so it stays planted) while the
-   back leg swings behind and the knee drops toward the floor as the heel
-   naturally lifts — it inherits the hip drop rather than canceling it,
-   since a real trailing back heel does come up off the ground. */
-.t-lunge .figure, .t-bulgariansplit .figure{animation:luBody 1.6s ease-in-out infinite}
-.t-lunge .lu-frontUp, .t-bulgariansplit .lu-frontUp{animation:luFrontUp 1.6s ease-in-out infinite}
-.t-lunge .lu-frontLow, .t-bulgariansplit .lu-frontLow{animation:luFrontLow 1.6s ease-in-out infinite}
-.t-lunge .lu-backUp{animation:luBackUp 1.6s ease-in-out infinite}
-.t-lunge .lu-backLow{animation:luBackLow 1.6s ease-in-out infinite}
-.t-lunge .lu-torsoG, .t-bulgariansplit .lu-torsoG{animation:luTorso 1.6s ease-in-out infinite}
-/* Bulgarian split squat's back leg is intentionally left un-animated —
-   the rear foot stays planted on the chair the whole rep. */
-@keyframes luBody{0%,100%{transform:translateY(0)}50%{transform:translateY(14px)}}
-@keyframes luFrontUp{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-14px) rotate(-14deg)}}
-@keyframes luFrontLow{0%,100%{transform:rotate(0)}50%{transform:rotate(4deg)}}
-@keyframes luBackUp{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-14px) rotate(24deg)}}
-@keyframes luBackLow{0%,100%{transform:rotate(0)}50%{transform:rotate(20deg)}}
-@keyframes luTorso{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-14px) rotate(-6deg)}}
-
-/* JUMP LUNGE — the one lunge variant that's actually airborne: the whole
-   figure rises well above standing height at the peak as the front/back
-   legs swap which one is forward, then lands back into the lunge. */
-.t-jumplunge .figure{animation:jlBody 1.3s ease-in-out infinite}
-.t-jumplunge .lu-frontUp{animation:jlFrontUp 1.3s ease-in-out infinite}
-.t-jumplunge .lu-frontLow{animation:jlFrontLow 1.3s ease-in-out infinite}
-.t-jumplunge .lu-backUp{animation:jlBackUp 1.3s ease-in-out infinite}
-.t-jumplunge .lu-backLow{animation:jlBackLow 1.3s ease-in-out infinite}
-.t-jumplunge .lu-torsoG{animation:jlTorso 1.3s ease-in-out infinite}
-@keyframes jlBody{0%,100%{transform:translateY(12px)}50%{transform:translateY(-10px)}}
-@keyframes jlFrontUp{0%,100%{transform:rotate(-18deg)}50%{transform:rotate(28deg)}}
-@keyframes jlFrontLow{0%,100%{transform:rotate(14deg)}50%{transform:rotate(-16deg)}}
-@keyframes jlBackUp{0%,100%{transform:rotate(42deg)}50%{transform:rotate(-16deg)}}
-@keyframes jlBackLow{0%,100%{transform:rotate(14deg)}50%{transform:rotate(10deg)}}
-@keyframes jlTorso{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(0deg)}}
-
-/* JUMPING JACK / STAR JUMP — arms sweep overhead, feet spread */
-.t-jumpingjack .figure{animation:jjBody 0.8s ease-in-out infinite}
-.t-jumpingjack .armL-up{animation:jjArmL 0.8s ease-in-out infinite}
-.t-jumpingjack .armR-up{animation:jjArmR 0.8s ease-in-out infinite}
-.t-jumpingjack .legL-up{animation:jjLegL 0.8s ease-in-out infinite}
-.t-jumpingjack .legR-up{animation:jjLegR 0.8s ease-in-out infinite}
-@keyframes jjBody{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
-@keyframes jjArmL{0%,100%{transform:rotate(0)}50%{transform:rotate(-165deg)}}
-@keyframes jjArmR{0%,100%{transform:rotate(0)}50%{transform:rotate(165deg)}}
-@keyframes jjLegL{0%,100%{transform:rotate(0)}50%{transform:rotate(-44deg)}}
-@keyframes jjLegR{0%,100%{transform:rotate(0)}50%{transform:rotate(44deg)}}
-
-/* SUPERMAN / SNOW ANGEL / Y-RAISE (lying face down) — arms and legs lift
-   off the floor together while the chest rises and the back extends */
-/* SUPERMAN — chest, arms and legs lift together off the floor, general brace */
-.t-superman .l-armUp{animation:smArm 1.8s ease-in-out infinite}
-.t-superman .l-armLow{animation:smArmLow 1.8s ease-in-out infinite}
-.t-superman .l-legUp{animation:smLeg 1.8s ease-in-out infinite}
-.t-superman .l-torsoG{animation:smTorso 1.8s ease-in-out infinite}
-.t-superman .figure{animation:smBody 1.8s ease-in-out infinite}
-@keyframes smBody{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
-@keyframes smArm{0%,100%{transform:rotate(0)}50%{transform:rotate(44deg)}}
-@keyframes smArmLow{0%,100%{transform:rotate(0)}50%{transform:rotate(18deg)}}
-@keyframes smLeg{0%,100%{transform:rotate(0)}50%{transform:rotate(-40deg)}}
-@keyframes smTorso{0%,100%{transform:rotate(0)}50%{transform:rotate(13deg)}}
-
-/* REVERSE SNOW ANGEL — a full sweep: straightened arms swing from down by
-   the hips all the way up overhead and back, unlike Superman's small
-   general lift. */
-.t-snowangel .l-armUp{animation:snArm 2.2s ease-in-out infinite}
-.t-snowangel .figure{animation:snBody 2.2s ease-in-out infinite}
-@keyframes snArm{0%,100%{transform:rotate(150deg)}50%{transform:rotate(0deg)}}
-@keyframes snBody{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
-
-/* PRONE Y-RAISE — arms held wide overhead in a fixed Y, only a small
-   isometric pulse (the "squeeze"), not a sweeping motion. */
-.t-yraise .l-armUp{animation:yrArm 2.4s ease-in-out infinite}
-.t-yraise .figure{animation:yrBody 2.4s ease-in-out infinite}
-@keyframes yrArm{0%,100%{transform:rotate(0deg)}50%{transform:rotate(58deg)}}
-@keyframes yrBody{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
-
-/* TOWEL ROW — leaning back at a fixed angle against the towel/post, the
-   whole body hinges up (pivoting at the planted feet) as the elbow drives
-   back, pulling the chest toward the anchored hand — not a generic
-   standing arm curl. */
-.t-row .rw-torsoG{animation:rwTorso 1.3s ease-in-out infinite}
-.t-row .rw-armUp{animation:rwArmUp 1.3s ease-in-out infinite}
-.t-row .rw-armLow{animation:rwArmLow 1.3s ease-in-out infinite}
-@keyframes rwTorso{0%,100%{transform:rotate(0)}50%{transform:rotate(-9deg)}}
-@keyframes rwArmUp{0%,100%{transform:rotate(0)}50%{transform:rotate(-8deg)}}
-@keyframes rwArmLow{0%,100%{transform:rotate(0)}50%{transform:rotate(50deg)}}
-
-/* DEAD BUG (lying on the back) — arms and knees start stacked over the body,
-   then opposite arm and leg extend away toward the floor, alternating */
-.t-deadbug .s-armUp{animation:dbArm 2.4s ease-in-out infinite}
-.t-deadbug .s-legUp{animation:dbLeg 2.4s ease-in-out infinite}
-.t-deadbug .s-legLow{animation:dbShin 2.4s ease-in-out infinite}
-@keyframes dbArm{0%,100%{transform:rotate(0)}50%{transform:rotate(-80deg)}}
-@keyframes dbLeg{0%,100%{transform:rotate(0)}50%{transform:rotate(64deg)}}
-@keyframes dbShin{0%,100%{transform:rotate(0)}50%{transform:rotate(-88deg)}}
-
-/* BIRD DOG (on all fours) — opposite arm reaches forward as the opposite
-   leg extends straight back, both level with the flat back */
-.t-birddog .q-armUp{animation:bdArm 2.6s ease-in-out infinite}
-.t-birddog .q-armLow{animation:bdArmLow 2.6s ease-in-out infinite}
-.t-birddog .q-legUp{animation:bdLeg 2.6s ease-in-out infinite}
-.t-birddog .q-legLow{animation:bdShin 2.6s ease-in-out infinite}
-@keyframes bdArm{0%,100%{transform:rotate(0)}50%{transform:rotate(76deg)}}
-@keyframes bdArmLow{0%,100%{transform:rotate(0)}50%{transform:rotate(14deg)}}
-@keyframes bdLeg{0%,100%{transform:rotate(0)}50%{transform:rotate(-64deg)}}
-@keyframes bdShin{0%,100%{transform:rotate(0)}50%{transform:rotate(-30deg)}}
-
-/* CRUNCH / V-UP / BICYCLE (lying on the back) — shoulders peel off the floor
-   as the torso curls toward the knees, arms reaching past them */
-.t-crunch .s-torsoG{animation:crTorso 1.3s ease-in-out infinite}
-.t-crunch .s-armUp{animation:crArm 1.3s ease-in-out infinite}
-.t-crunch .s-legUp{animation:crLeg 1.3s ease-in-out infinite}
-.t-crunch .s-legLow{animation:crShin 1.3s ease-in-out infinite}
-@keyframes crTorso{0%,100%{transform:rotate(0)}50%{transform:rotate(-52deg)}}
-@keyframes crArm{0%,100%{transform:rotate(30deg)}50%{transform:rotate(78deg)}}
-@keyframes crLeg{0%,100%{transform:rotate(0)}50%{transform:rotate(-30deg)}}
-@keyframes crShin{0%,100%{transform:rotate(0)}50%{transform:rotate(22deg)}}
-
-/* HOLLOW BODY HOLD (lying on the back) — a braced, barely-moving hold with
-   shoulders and legs hovering just off the floor */
-/* HOLLOW BODY HOLD — a straight-line "banana": legs extended long and low
-   (not bent up like a crunch), arms extended long past the head, torso
-   just barely curled. Only a slight tremble, since this is a held brace. */
-.t-hollow .s-torsoG{animation:hoTorso 2.6s ease-in-out infinite}
-.t-hollow .s-armUp{animation:hoArm 2.6s ease-in-out infinite}
-.t-hollow .s-legUp{animation:hoLeg 2.6s ease-in-out infinite}
-.t-hollow .s-legLow{animation:hoShin 2.6s ease-in-out infinite}
-@keyframes hoTorso{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(-10deg)}}
-@keyframes hoArm{0%,100%{transform:rotate(-62deg)}50%{transform:rotate(-64deg)}}
-@keyframes hoLeg{0%,100%{transform:rotate(38deg)}50%{transform:rotate(40deg)}}
-@keyframes hoShin{0%,100%{transform:rotate(-118deg)}50%{transform:rotate(-116deg)}}
-
-/* BURPEE — squat, kick back to plank, chest to floor, jump up reaching overhead */
-.t-burpee .figure{animation:buBody 2.2s ease-in-out infinite}
-.t-burpee .torsoG{animation:buTorso 2.2s ease-in-out infinite}
-.t-burpee .armL-up{animation:buArmL 2.2s ease-in-out infinite}
-.t-burpee .armR-up{animation:buArmR 2.2s ease-in-out infinite}
-.t-burpee .legL-up{animation:buLegL 2.2s ease-in-out infinite}
-.t-burpee .legR-up{animation:buLegR 2.2s ease-in-out infinite}
-@keyframes buBody{
-  0%,100%{transform:translateY(0)}
-  20%{transform:translateY(10px)}
-  45%,65%{transform:translateY(6px)}
-  85%{transform:translateY(-9px)}
-}
-@keyframes buTorso{
-  0%,100%{transform:translateY(0) rotate(0)}
-  20%{transform:translateY(-10px) rotate(-10deg)}
-  45%,65%{transform:translateY(0) rotate(-48deg)}
-  85%{transform:translateY(0) rotate(0)}
-}
-@keyframes buArmL{0%,20%,100%{transform:rotate(0)}45%,65%{transform:rotate(-10deg)}85%{transform:rotate(-165deg)}}
-@keyframes buArmR{0%,20%,100%{transform:rotate(0)}45%,65%{transform:rotate(10deg)}85%{transform:rotate(165deg)}}
-@keyframes buLegL{0%,100%{transform:translateY(0) rotate(0)}20%{transform:translateY(-10px) rotate(0)}45%,65%{transform:translateY(0) rotate(50deg)}85%{transform:translateY(0) rotate(0)}}
-@keyframes buLegR{0%,100%{transform:translateY(0) rotate(0)}20%{transform:translateY(-10px) rotate(0)}45%,65%{transform:translateY(0) rotate(-50deg)}85%{transform:translateY(0) rotate(0)}}
-
-/* STEP-BACK / HALF BURPEE — squat, step or jump back to plank, back in,
-   stand up. Deliberately stops there: no push-up dip and no overhead
-   jump, since both cues explicitly call those out as skipped. */
-.t-burpeestep .figure{animation:bsBody 2.6s ease-in-out infinite}
-.t-burpeestep .torsoG{animation:bsTorso 2.6s ease-in-out infinite}
-.t-burpeestep .legL-up{animation:bsLegL 2.6s ease-in-out infinite}
-.t-burpeestep .legR-up{animation:bsLegR 2.6s ease-in-out infinite}
-@keyframes bsBody{0%,100%{transform:translateY(0)}25%,75%{transform:translateY(10px)}50%{transform:translateY(6px)}}
-@keyframes bsTorso{0%,100%{transform:translateY(0) rotate(0)}25%,75%{transform:translateY(-10px) rotate(-10deg)}50%{transform:translateY(0) rotate(-48deg)}}
-@keyframes bsLegL{0%,100%{transform:translateY(0) rotate(0)}25%,75%{transform:translateY(-10px) rotate(0)}50%{transform:translateY(0) rotate(50deg)}}
-@keyframes bsLegR{0%,100%{transform:translateY(0) rotate(0)}25%,75%{transform:translateY(-10px) rotate(0)}50%{transform:translateY(0) rotate(-50deg)}}
-
-/* HIGH KNEES — fast alternating knee drive, arms pump opposite */
-/* HIGH KNEES — fast alternating knee drive, arms pump opposite */
-.t-highknees .figure{animation:hkBody 0.5s ease-in-out infinite}
-.t-highknees .legL-up{animation:hkThigh 0.5s ease-in-out infinite}
-.t-highknees .legL-low{animation:hkShin 0.5s ease-in-out infinite}
-.t-highknees .legR-up{animation:hkThigh 0.5s ease-in-out infinite 0.25s}
-.t-highknees .legR-low{animation:hkShin 0.5s ease-in-out infinite 0.25s}
-.t-highknees .armL-up{animation:hkArmR 0.5s ease-in-out infinite}
-.t-highknees .armR-up{animation:hkArmL 0.5s ease-in-out infinite}
-@keyframes hkBody{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
-@keyframes hkThigh{0%,100%{transform:rotate(0)}50%{transform:rotate(-78deg)}}
-@keyframes hkShin{0%,100%{transform:rotate(0)}50%{transform:rotate(82deg)}}
-@keyframes hkArmL{0%,100%{transform:rotate(28deg)}50%{transform:rotate(-56deg)}}
-@keyframes hkArmR{0%,100%{transform:rotate(-28deg)}50%{transform:rotate(56deg)}}
-
-/* HIGH KNEES (EASY) — same pattern but a light relaxed jog: noticeably
-   slower cadence and a much smaller knee lift than the fast drive above. */
-.t-highkneeseasy .figure{animation:hkeBody 0.9s ease-in-out infinite}
-.t-highkneeseasy .legL-up{animation:hkeThigh 0.9s ease-in-out infinite}
-.t-highkneeseasy .legL-low{animation:hkeShin 0.9s ease-in-out infinite}
-.t-highkneeseasy .legR-up{animation:hkeThigh 0.9s ease-in-out infinite 0.45s}
-.t-highkneeseasy .legR-low{animation:hkeShin 0.9s ease-in-out infinite 0.45s}
-.t-highkneeseasy .armL-up{animation:hkeArmR 0.9s ease-in-out infinite}
-.t-highkneeseasy .armR-up{animation:hkeArmL 0.9s ease-in-out infinite}
-@keyframes hkeBody{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
-@keyframes hkeThigh{0%,100%{transform:rotate(0)}50%{transform:rotate(-42deg)}}
-@keyframes hkeShin{0%,100%{transform:rotate(0)}50%{transform:rotate(46deg)}}
-@keyframes hkeArmL{0%,100%{transform:rotate(16deg)}50%{transform:rotate(-30deg)}}
-@keyframes hkeArmR{0%,100%{transform:rotate(-16deg)}50%{transform:rotate(30deg)}}
-
-/* BEAR CRAWL — low crouch, opposite hand/foot creep forward */
-/* BEAR CRAWL / HOLD — on all fours (shares the quad rig with bird dog and
-   cat-cow), near knee hovering just off the floor and reaching forward
-   opposite the near arm, instead of a standing figure. */
-.t-bearcrawl .q-legUp{animation:bcThigh 1.4s ease-in-out infinite}
-.t-bearcrawl .q-legLow{animation:bcShin 1.4s ease-in-out infinite}
-.t-bearcrawl .q-armUp{animation:bcArmUp 1.4s ease-in-out infinite}
-.t-bearcrawl .q-armLow{animation:bcArmLow 1.4s ease-in-out infinite}
-.t-bearcrawl .q-torsoG{animation:bcTorso 1.4s ease-in-out infinite}
-@keyframes bcThigh{0%,100%{transform:rotate(0)}50%{transform:rotate(-30deg)}}
-@keyframes bcShin{0%,100%{transform:rotate(0)}50%{transform:rotate(40deg)}}
-@keyframes bcArmUp{0%,100%{transform:rotate(0)}50%{transform:rotate(38deg)}}
-@keyframes bcArmLow{0%,100%{transform:rotate(0)}50%{transform:rotate(-26deg)}}
-@keyframes bcTorso{0%,100%{transform:rotate(0) translateY(0)}50%{transform:rotate(-8deg) translateY(4px)}}
-
-/* GLUTE BRIDGE (lying on the back) — feet planted, hips drive up to a
-   straight line from knee to shoulder, then lower under control */
-/* GLUTE BRIDGE — hips pulse up into a bridge and back down each rep */
-.t-glutebridge .s-torsoG{animation:gbTorso 1.7s ease-in-out infinite}
-.t-glutebridge .s-legUp{animation:gbThigh 1.7s ease-in-out infinite}
-.t-glutebridge .s-legLow{animation:gbShin 1.7s ease-in-out infinite}
-.t-glutebridge .s-armUp{animation:gbArm 1.7s ease-in-out infinite}
-@keyframes gbTorso{0%,100%{transform:rotate(0)}50%{transform:rotate(-30deg)}}
-@keyframes gbThigh{0%,100%{transform:rotate(0)}50%{transform:rotate(24deg)}}
-@keyframes gbShin{0%,100%{transform:rotate(0)}50%{transform:rotate(-22deg)}}
-@keyframes gbArm{0%,100%{transform:rotate(110deg)}50%{transform:rotate(110deg)}}
-
-/* GLUTE BRIDGE MARCH — hips STAY lifted in the bridge throughout (no
-   pulsing up/down like the plain bridge); instead the knee drives toward
-   the chest and back, one leg at a time. */
-.t-glutemarch .s-torsoG{animation:gmTorso 1.6s ease-in-out infinite}
-.t-glutemarch .s-legUp{animation:gmThigh 1.6s ease-in-out infinite}
-.t-glutemarch .s-legLow{animation:gmShin 1.6s ease-in-out infinite}
-.t-glutemarch .s-armUp{animation:gbArm 1.6s ease-in-out infinite}
-@keyframes gmTorso{0%,100%{transform:rotate(-18deg)}50%{transform:rotate(-20deg)}}
-@keyframes gmThigh{0%,100%{transform:rotate(16deg)}50%{transform:rotate(86deg)}}
-@keyframes gmShin{0%,100%{transform:rotate(-14deg)}50%{transform:rotate(-76deg)}}
-
-/* CALF RAISE — quick rise onto the toes */
-.t-calfraise .figure{animation:crfBody 0.9s ease-in-out infinite}
-@keyframes crfBody{0%,100%{transform:translateY(0)}50%{transform:translateY(-16px)}}
-
-/* GENERIC HELD STRETCH — a slow, gentle breathing sway */
-/* STANDING FORWARD FOLD / HAMSTRING STRETCH — a real hip hinge: the torso
-   group swings forward around the hip until it's roughly horizontal, head
-   hanging, instead of a subtle standing sway. */
-.t-fold .figure{animation:fdBody 3.2s ease-in-out infinite}
-.t-fold .torsoG{animation:fdTorso 3.2s ease-in-out infinite}
-@keyframes fdBody{0%,100%{transform:translateY(0)}50%{transform:translateY(1px)}}
-@keyframes fdTorso{0%,100%{transform:rotate(78deg)}50%{transform:rotate(88deg)}}
-
-/* KNEELING LUNGE STRETCH — hip flexor stretch / world's greatest stretch.
-   Same side-profile lunge rig, held deep with just a slow gentle pulse
-   (a stretch hold, not a rep) instead of bouncing, both legs grounded. */
-.t-kneelunge .figure{animation:klBody 3.2s ease-in-out infinite}
-.t-kneelunge .lu-frontUp{animation:klFrontUp 3.2s ease-in-out infinite}
-.t-kneelunge .lu-frontLow{animation:klFrontLow 3.2s ease-in-out infinite}
-.t-kneelunge .lu-backUp{animation:klBackUp 3.2s ease-in-out infinite}
-.t-kneelunge .lu-backLow{animation:klBackLow 3.2s ease-in-out infinite}
-@keyframes klBody{0%,100%{transform:translateY(14px)}50%{transform:translateY(16px)}}
-@keyframes klFrontUp{0%,100%{transform:rotate(-18deg)}50%{transform:rotate(-20deg)}}
-@keyframes klFrontLow{0%,100%{transform:rotate(14deg)}50%{transform:rotate(16deg)}}
-@keyframes klBackUp{0%,100%{transform:rotate(42deg)}50%{transform:rotate(46deg)}}
-@keyframes klBackLow{0%,100%{transform:rotate(14deg)}50%{transform:rotate(16deg)}}
-
-/* WORLD'S GREATEST STRETCH — the same deep, grounded lunge, plus its
-   actual distinguishing move: one arm rotates up from the floor to the sky. */
-.t-kneelrotate .figure{animation:klBody 3.2s ease-in-out infinite}
-.t-kneelrotate .lu-frontUp{animation:klFrontUp 3.2s ease-in-out infinite}
-.t-kneelrotate .lu-frontLow{animation:klFrontLow 3.2s ease-in-out infinite}
-.t-kneelrotate .lu-backUp{animation:klBackUp 3.2s ease-in-out infinite}
-.t-kneelrotate .lu-backLow{animation:klBackLow 3.2s ease-in-out infinite}
-.t-kneelrotate .lu-armUp{animation:wgArm 3.2s ease-in-out infinite}
-@keyframes wgArm{0%,100%{transform:rotate(0)}50%{transform:rotate(-160deg)}}
-
-/* QUAD STRETCH — standing support leg static, other heel drawn up and
-   back toward the glute (hip extended, knee folded), instead of a plain
-   standing sway. */
-.t-quadhold .legR-up{animation:qhThighR 3s ease-in-out infinite}
-.t-quadhold .legR-low{animation:qhShinR 3s ease-in-out infinite}
-@keyframes qhThighR{0%,100%{transform:rotate(8deg)}50%{transform:rotate(14deg)}}
-@keyframes qhShinR{0%,100%{transform:rotate(-128deg)}50%{transform:rotate(-135deg)}}
-
-/* CHILD'S POSE — mostly-static resting shape (slow breathing sway only). */
-.t-childspose .figure{animation:cpBody 3.5s ease-in-out infinite}
-.t-childspose .k-torsoG{animation:cpTorso 3.5s ease-in-out infinite}
-@keyframes cpBody{0%,100%{transform:translateY(0)}50%{transform:translateY(1px)}}
-@keyframes cpTorso{0%,100%{transform:rotate(0)}50%{transform:rotate(-2deg)}}
-
-/* THORACIC ROTATION / THREAD THE NEEDLE — on all fours (quad rig), the
-   near arm sweeps from bracing down through to reaching up toward the
-   ceiling, with a little spinal rotation in the torso. */
-/* THORACIC ROTATION — elbow sweeps down then up toward the ceiling. */
-.t-quadreach .q-armUp{animation:qrArmUp 2.8s ease-in-out infinite}
-.t-quadreach .q-armLow{animation:qrArmLow 2.8s ease-in-out infinite}
-.t-quadreach .q-torsoG{animation:qrTorso 2.8s ease-in-out infinite}
-@keyframes qrArmUp{0%,100%{transform:rotate(0)}50%{transform:rotate(70deg)}}
-@keyframes qrArmLow{0%,100%{transform:rotate(0)}50%{transform:rotate(-40deg)}}
-@keyframes qrTorso{0%,100%{transform:rotate(0)}50%{transform:rotate(10deg)}}
-
-/* THREAD THE NEEDLE — the opposite motion from thoracic rotation: the arm
-   sweeps down and under the body instead of up to the ceiling, and the
-   torso dips down at the end so the shoulder/ear settle toward the floor. */
-.t-quadthread .q-armUp{animation:qtArmUp 2.8s ease-in-out infinite}
-.t-quadthread .q-armLow{animation:qtArmLow 2.8s ease-in-out infinite}
-.t-quadthread .q-torsoG{animation:qtTorso 2.8s ease-in-out infinite}
-@keyframes qtArmUp{0%,100%{transform:rotate(0)}50%{transform:rotate(-55deg)}}
-@keyframes qtArmLow{0%,100%{transform:rotate(0)}50%{transform:rotate(65deg)}}
-@keyframes qtTorso{0%,100%{transform:rotate(0)}50%{transform:rotate(-12deg)}}
-
-/* TABLE ROW / ARCHER TABLE ROW — lying under a fixed bar (inclineRow rig),
-   pulling the chest up toward it by bending the elbow, distinct from the
-   standing anchored pull used for towel row. */
-.t-tablerow .i-torsoG{animation:trTorso 1.4s ease-in-out infinite}
-.t-tablerow .i-armUp{animation:trArmUp 1.4s ease-in-out infinite}
-.t-tablerow .i-armLow{animation:trArmLow 1.4s ease-in-out infinite}
-@keyframes trTorso{0%,100%{transform:rotate(0)}50%{transform:rotate(16deg)}}
-@keyframes trArmUp{0%,100%{transform:rotate(0)}50%{transform:rotate(-14deg)}}
-@keyframes trArmLow{0%,100%{transform:rotate(0)}50%{transform:rotate(-46deg)}}
-
-/* ASSISTED PISTOL SQUAT — one leg bends down into a single-leg squat while
-   the other stays straight and lifted forward, instead of a symmetric
-   two-leg squat. */
-/* ASSISTED PISTOL SQUAT — one leg bends down into a single-leg squat while
-   the other stays straight and lifted forward, instead of a symmetric
-   two-leg squat. The support leg (left) cancels the whole-body drop so
-   its foot stays planted; the lifted leg is deliberately off the ground. */
-/* ASSISTED PISTOL SQUAT — side-profile lunge rig reused: the "back" leg
-   slot is the support leg bending down into a single-leg squat (grounded,
-   cancels the hip drop), the "front" leg slot is the working leg swinging
-   up and extended forward, off the floor — a forward leg extension is a
-   front-to-back movement that only reads correctly from the side. */
-.t-pistol .figure{animation:psBody 1.8s ease-in-out infinite}
-.t-pistol .lu-backUp{animation:psSupportUp 1.8s ease-in-out infinite}
-.t-pistol .lu-backLow{animation:psSupportLow 1.8s ease-in-out infinite}
-.t-pistol .lu-frontUp{animation:psExtUp 1.8s ease-in-out infinite}
-.t-pistol .lu-frontLow{animation:psExtLow 1.8s ease-in-out infinite}
-.t-pistol .lu-torsoG{animation:psTorso 1.8s ease-in-out infinite}
-@keyframes psBody{0%,100%{transform:translateY(0)}50%{transform:translateY(13px)}}
-@keyframes psSupportUp{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-13px) rotate(-8deg)}}
-@keyframes psSupportLow{0%,100%{transform:rotate(0)}50%{transform:rotate(52deg)}}
-@keyframes psExtUp{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-13px) rotate(-14deg)}}
-@keyframes psExtLow{0%,100%{transform:rotate(0)}50%{transform:rotate(10deg)}}
-@keyframes psTorso{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-13px) rotate(-8deg)}}
-
-/* V-UP — lying flat (straight legs down, one arm extended long past the
-   head) curling up into a V so the torso and straight legs rise to meet,
-   distinct from the bent-knee bicycle crunch. */
-.t-vup .s-torsoG{animation:vuTorso 1.6s ease-in-out infinite}
-.t-vup .s-armUp{animation:vuArm 1.6s ease-in-out infinite}
-.t-vup .s-legUp{animation:vuLeg 1.6s ease-in-out infinite}
-.t-vup .s-legLow{animation:vuShin 1.6s ease-in-out infinite}
-@keyframes vuTorso{0%,100%{transform:rotate(0)}50%{transform:rotate(52deg)}}
-@keyframes vuArm{0%,100%{transform:rotate(-78deg)}50%{transform:rotate(-18deg)}}
-@keyframes vuLeg{0%,100%{transform:rotate(46deg)}50%{transform:rotate(18deg)}}
-@keyframes vuShin{0%,100%{transform:rotate(-118deg)}50%{transform:rotate(-118deg)}}
-
-/* CAT-COW (on all fours) — the spine rounds up toward the ceiling, then dips
-   as the chest opens; hands and knees stay planted */
-.t-catcow .q-torsoG{animation:ccTorso 2.6s ease-in-out infinite}
-@keyframes ccTorso{0%,100%{transform:rotate(-20deg)}50%{transform:rotate(20deg)}}
-
-/* HIP CIRCLE — hips trace a big, slow circle */
-.t-hipcircle .legL-up, .t-hipcircle .legR-up{animation:hcLegs 2.4s linear infinite}
-.t-hipcircle .torsoG{animation:hcTorso 2.4s linear infinite}
-@keyframes hcLegs{
-  0%{transform:translate(0,0) rotate(0)} 25%{transform:translate(11px,-3px) rotate(5deg)}
-  50%{transform:translate(0,-9px) rotate(0)} 75%{transform:translate(-11px,-3px) rotate(-5deg)}
-  100%{transform:translate(0,0) rotate(0)}
-}
-@keyframes hcTorso{
-  0%{transform:translate(0,0) rotate(0)} 25%{transform:translate(11px,-3px) rotate(5deg)}
-  50%{transform:translate(0,-9px) rotate(0)} 75%{transform:translate(-11px,-3px) rotate(-5deg)}
-  100%{transform:translate(0,0) rotate(0)}
-}
-
-/* MARCH IN PLACE — a relaxed, low-amplitude knee lift; deliberately much
-   calmer than High Knees since this is the gentle Day 1 warm-up */
-.t-march .figure{animation:mrBody 1.1s ease-in-out infinite}
-.t-march .legL-up{animation:mrThigh 1.1s ease-in-out infinite}
-.t-march .legL-low{animation:mrShin 1.1s ease-in-out infinite}
-.t-march .legR-up{animation:mrThigh 1.1s ease-in-out infinite 0.55s}
-.t-march .legR-low{animation:mrShin 1.1s ease-in-out infinite 0.55s}
-.t-march .armL-up{animation:mrArmR 1.1s ease-in-out infinite}
-.t-march .armR-up{animation:mrArmL 1.1s ease-in-out infinite}
-@keyframes mrBody{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
-@keyframes mrThigh{0%,100%{transform:rotate(0)}50%{transform:rotate(-58deg)}}
-@keyframes mrShin{0%,100%{transform:rotate(0)}50%{transform:rotate(62deg)}}
-@keyframes mrArmL{0%,100%{transform:rotate(20deg)}50%{transform:rotate(-38deg)}}
-@keyframes mrArmR{0%,100%{transform:rotate(-20deg)}50%{transform:rotate(38deg)}}
-
-/* SCAPULAR SQUEEZE HOLD — an isometric: elbows stay tucked and barely move
-   while the shoulder blades pinch together. Not a full rowing pull. */
-.t-scapsqueeze .armL-up{animation:ssArmL 2.2s ease-in-out infinite}
-.t-scapsqueeze .armR-up{animation:ssArmR 2.2s ease-in-out infinite}
-.t-scapsqueeze .armL-low{animation:ssLowL 2.2s ease-in-out infinite}
-.t-scapsqueeze .armR-low{animation:ssLowR 2.2s ease-in-out infinite}
-.t-scapsqueeze .torsoG{animation:ssTorso 2.2s ease-in-out infinite}
-@keyframes ssArmL{0%,100%{transform:rotate(4deg)}50%{transform:rotate(-8deg)}}
-@keyframes ssArmR{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(8deg)}}
-@keyframes ssLowL{0%,100%{transform:rotate(6deg)}50%{transform:rotate(16deg)}}
-@keyframes ssLowR{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(-16deg)}}
-@keyframes ssTorso{0%,100%{transform:scaleX(1)}50%{transform:scaleX(0.94)}}
-
-/* CHEST OPENER STRETCH — chest lifts (torso leans back slightly) as the
-   clasped hands behind the back pull further down and back. */
-.t-chestopener .co-armFar{animation:coArmFar 2.6s ease-in-out infinite}
-.t-chestopener .co-armNear{animation:coArmNear 2.6s ease-in-out infinite}
-.t-chestopener .co-armNearLow{animation:coArmNearLow 2.6s ease-in-out infinite}
-@keyframes coArmFar{0%,100%{transform:rotate(0)}50%{transform:rotate(6deg)}}
-@keyframes coArmNear{0%,100%{transform:rotate(0)}50%{transform:rotate(-8deg)}}
-@keyframes coArmNearLow{0%,100%{transform:rotate(0)}50%{transform:rotate(12deg)}}
-
-
-/* ARM CIRCLE — full shoulder rotation, straight arm */
-/* ARM CIRCLES — full straight arm sweeps a big slow circle */
-.t-armcircle .armL-up{animation:acArmL 1.6s linear infinite}
-.t-armcircle .armR-up{animation:acArmR 1.6s linear infinite}
-@keyframes acArmL{0%{transform:rotate(0)}100%{transform:rotate(-360deg)}}
-@keyframes acArmR{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
-
-/* SHOULDER ROLLS — the forearm stays folded in tight (shortening the
-   visual radius) so the same rotation traces a small circle right at the
-   shoulder joint, instead of the big full-arm sweep used for arm circles. */
-.t-shoulderroll .armL-up{animation:acArmL 1.3s linear infinite}
-.t-shoulderroll .armR-up{animation:acArmR 1.3s linear infinite}
-.t-shoulderroll .armL-low{transform:rotate(100deg)}
-.t-shoulderroll .armR-low{transform:rotate(-100deg)}
-</style>
 </body>
 </html>
