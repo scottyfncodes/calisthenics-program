@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#182420">
-<title>Classic 12-Week Program — Calisthenics</title>
+<title>Classic 12-Week Program · Calisthenics</title>
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="icon" href="icons/icon-192.png" type="image/png" sizes="192x192">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -517,7 +517,7 @@ function getWorkout(day){
 
   if(dow===6){
     return {phase, week, dow, cat:"MOB", flow:MOBILITY_DAY, flowSec:150,
-      title:"Mobility Flow", note:"A slow, deliberate flow. No circuit today — just move well."};
+      title:"Mobility Flow", note:"A slow, deliberate flow. No circuit today, just move well."};
   }
   if(dow===7){
     return {phase, week, dow, cat:"REST", flow:REST_DAY, flowSec:120,
@@ -701,7 +701,7 @@ function render(){
     html += section(plan[0], w.title, `${w.note} · ~${Math.round(w.flow.length*w.flowSec/60)} min total`, catColor);
   } else {
     html += section(plan[0], 'Warm-up', '2 rounds · 30–40s each, easy pace', 'var(--chalk)');
-    html += section(plan[1], `${w.title} — Circuit`, `${w.rounds} rounds through all 3 · ${w.workSec}s work / ${w.restSec}s rest`, catColor, w.workSec);
+    html += section(plan[1], `${w.title}: Circuit`, `${w.rounds} rounds through all 3 · ${w.workSec}s work / ${w.restSec}s rest`, catColor, w.workSec);
     html += section(plan[2], 'Cool-down', 'Hold each stretch 40–45s per side', 'var(--chalk)');
   }
 

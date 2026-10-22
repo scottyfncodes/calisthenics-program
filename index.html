@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#182420">
 <meta name="description" content="Tell us how much time you have. We'll build the calisthenics workout.">
-<title>Calisthenics — Your time, your workout</title>
+<title>Calisthenics: your time, your workout</title>
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="icon" href="icons/icon-192.png" type="image/png" sizes="192x192">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -823,7 +823,7 @@ function openPlan(){
         <span class="tag" style="--c:${PATTERN_COLOR(it.id)}">${esc(PATTERNS[EX[it.id].pat[0]].short)}</span></button></li>`).join('')}</ul>
     </section>`).join('')}
     ${s.notes.length ? `<div class="pv-notes" style="margin:20px 4px 0">${s.notes.map(n=>`<p>${esc(n)}</p>`).join('')}</div>` : ''}
-    <p class="safety">Times are estimates at a steady pace. Rest runs automatically; you can add rest, skip, swap an exercise or end early at any point. Work in a pain-free range — this app can't check your form or replace medical advice.</p>`;
+    <p class="safety">Times are estimates at a steady pace. Rest runs automatically; you can add rest, skip, swap an exercise or end early at any point. Work in a pain-free range. This app can't check your form or replace medical advice.</p>`;
   show('plan');
   initFigs($('#plan-body'));
   $('#plan-body').querySelectorAll('[data-ex]').forEach(b => b.onclick = () => exerciseSheet(b.dataset.ex));
@@ -999,7 +999,7 @@ function renderPlayer(force){
   const nx = run.phase==='rest' ? nextAfter(run, k) : Runner.upNext(run);
   $('#pl-next').innerHTML = nx
     ? `<span class="thumb">${fig(nx.id)}</span><span class="txt"><span class="l blk">${run.phase==='rest' ? 'After that' : 'Next'}</span><span class="n blk">${esc(exName(nx.id))} · ${esc(targetText(nx))}</span></span>`
-    : `<span class="txt"><span class="l blk">Next</span><span class="n blk">Finish — nice work</span></span>`;
+    : `<span class="txt"><span class="l blk">Next</span><span class="n blk">Finish. Nice work</span></span>`;
   initFigs($('#pl-next'));
   updateLive(t);
 }
